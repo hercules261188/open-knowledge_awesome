@@ -15,6 +15,7 @@ interface DecoInfo {
   from: number;
   to: number;
   classes: string;
+  style: string;
   isLine: boolean;
 }
 
@@ -25,12 +26,17 @@ function collect(doc: string): DecoInfo[] {
   const cursor = set.iter();
   while (cursor.value) {
     const spec =
-      (cursor.value as unknown as { spec?: { class?: string; attributes?: unknown } }).spec ?? {};
+      (
+        cursor.value as unknown as {
+          spec?: { class?: string; attributes?: { style?: string } };
+        }
+      ).spec ?? {};
     const isLine = cursor.from === cursor.to;
     out.push({
       from: cursor.from,
       to: cursor.to,
       classes: (spec.class ?? '') as string,
+      style: spec.attributes?.style ?? '',
       isLine,
     });
     cursor.next();
@@ -40,6 +46,10 @@ function collect(doc: string): DecoInfo[] {
 
 function classesAtLine(decos: DecoInfo[], lineFrom: number): string[] {
   return decos.filter((d) => d.isLine && d.from === lineFrom).map((d) => d.classes);
+}
+
+function styleAtLine(decos: DecoInfo[], lineFrom: number): string[] {
+  return decos.filter((d) => d.isLine && d.from === lineFrom).map((d) => d.style);
 }
 
 function markRangesWithClass(decos: DecoInfo[], cls: string): Array<{ from: number; to: number }> {
@@ -147,6 +157,14 @@ describe('source-polish view-plugin — buildDecorationsForRanges', () => {
       expect(classesAtLine(decos, 0).join(' ')).toContain('cm-table-header');
       expect(classesAtLine(decos, 10).join(' ')).toContain('cm-table-row');
       expect(classesAtLine(decos, 20).join(' ')).toContain('cm-table-row');
+    });
+
+    test('table lines carry --list-hang: 2ch so the hang composes through the .cm-line calc (like lists)', () => {
+      const doc = '| a | b |\n| - | - |\n| 1 | 2 |';
+      const decos = collect(doc);
+      expect(styleAtLine(decos, 0).join(' ')).toContain('--list-hang: 2ch');
+      expect(styleAtLine(decos, 10).join(' ')).toContain('--list-hang: 2ch');
+      expect(styleAtLine(decos, 20).join(' ')).toContain('--list-hang: 2ch');
     });
 
     test('each table line gets exactly ONE of {cm-table-header, cm-table-row} — no duplicate from TableDelimiter nested in TableRow', () => {

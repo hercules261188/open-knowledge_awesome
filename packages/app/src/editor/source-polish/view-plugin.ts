@@ -12,8 +12,14 @@ const LIST_PREFIX_RE = /^(\s*(?:[-*+]|\d+[.)]) (?:\[[ x]\] )?)/;
 
 const delMark = Decoration.mark({ class: 'cm-del' });
 
-const tableHeaderLine = Decoration.line({ class: 'cm-table-header' });
-const tableRowLine = Decoration.line({ class: 'cm-table-row' });
+const tableHeaderLine = Decoration.line({
+  class: 'cm-table-header',
+  attributes: { style: '--list-hang: 2ch' },
+});
+const tableRowLine = Decoration.line({
+  class: 'cm-table-row',
+  attributes: { style: '--list-hang: 2ch' },
+});
 
 function countLeadingIndent(text: string): number {
   let indent = 0;

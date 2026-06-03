@@ -4581,15 +4581,21 @@ html.electron-mode [data-slot="sidebar-inner"] {
   --broken-link-color: oklch(72% 0.18 25);
 }
 
-/* Tables — hanging indent only. Wrapped row continuation aligns under the
-   first cell's content, not under `|`. No background, no border, no accent
-   bar, no cell bands, NO font-size change — table lines read as the same
-   size as surrounding paragraph text. Compactness was cut as stylistic
-   (see SPEC §6.6, §11 D4). */
+/* Tables — hanging indent only, composed through .cm-line's additive-calc
+   via --list-hang (set inline by the source-polish view-plugin on
+   table-row/header lines — same mechanism lists use). Wrapped row
+   continuation aligns under the first cell's content, not under `|`. No
+   background, no border, no accent bar, no cell bands, NO font-size change —
+   table lines read as the same size as surrounding paragraph text. Like
+   .cm-list-item, redundant while .cm-line carries !important on
+   padding-inline-start and incorporates --list-hang; retained as
+   documentation. The prior standalone calc(8px + 2ch) was overridden by the
+   base !important while the negative text-indent leaked, pulling tables ~2ch
+   left of prose. */
 .cm-table-row,
 .cm-table-header {
-  padding-inline-start: calc(8px + 2ch);
-  text-indent: -2ch;
+  padding-inline-start: var(--list-hang, 2ch);
+  text-indent: calc(-1 * var(--list-hang, 2ch));
 }
 
 /* V2 mode-toggle visibility (FR9, V2 SPEC §8b) — replaces Tailwind's

@@ -252,4 +252,101 @@ test.describe('CM6 source-mode padding contract', () => {
         (violations.length > 0 ? `\n\nViolations:\n${violations.join('\n')}` : ''),
     ).toEqual([]);
   });
+
+  test('table lines align with prose (not pulled left of the baseline)', async ({ page, api }) => {
+    const docName = `cm6-table-${randomUUID().slice(0, 8)}`;
+    await api.createPage(`${docName}.md`);
+    await page.goto(`/#/${docName}`);
+    await waitForProvider(page);
+    await page.waitForSelector('.ProseMirror');
+
+    const tableFixture = [
+      'Baseline prose paragraph for alignment.',
+      '',
+      '| Species | Count |',
+      '| --- | --- |',
+      '| Flounder | 4 |',
+      '',
+    ].join('\n');
+    await seedMarkdown(api, docName, tableFixture);
+
+    await page.getByRole('radio', { name: 'Markdown source' }).click();
+    await page.waitForSelector('.cm-content', { timeout: 10_000 });
+    await page.waitForFunction(
+      () =>
+        document.querySelectorAll('.cm-line.cm-table-header').length >= 1 &&
+        document.querySelectorAll('.cm-line.cm-table-row').length >= 2,
+      null,
+      { timeout: 10_000 },
+    );
+
+    const measured = await page.evaluate(() => {
+      function firstGlyphLeft(line: HTMLElement): number {
+        const lineLeft = line.getBoundingClientRect().left;
+        const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
+        let node = walker.nextNode() as Text | null;
+        while (node && (!node.nodeValue || node.nodeValue.length === 0)) {
+          node = walker.nextNode() as Text | null;
+        }
+        if (!node?.nodeValue) return lineLeft;
+        const range = document.createRange();
+        range.setStart(node, 0);
+        range.setEnd(node, 1);
+        return range.getBoundingClientRect().left;
+      }
+      function measureLine(line: HTMLElement) {
+        const cs = getComputedStyle(line);
+        return {
+          text: (line.textContent ?? '').slice(0, 40),
+          firstGlyphLeft: firstGlyphLeft(line),
+          lineLeft: line.getBoundingClientRect().left,
+          paddingLeftPx: parseFloat(cs.paddingLeft) || 0,
+          textIndentPx: parseFloat(cs.textIndent) || 0,
+        };
+      }
+      const allLines = Array.from(document.querySelectorAll<HTMLElement>('.cm-content .cm-line'));
+      const proseEl = allLines.find(
+        (l) =>
+          (l.textContent ?? '').includes('Baseline prose') &&
+          !l.classList.contains('cm-table-row') &&
+          !l.classList.contains('cm-table-header') &&
+          !l.classList.contains('cm-list-item') &&
+          !l.classList.contains('cm-fenced-code-line'),
+      );
+      const tableLines = Array.from(
+        document.querySelectorAll<HTMLElement>('.cm-line.cm-table-header, .cm-line.cm-table-row'),
+      );
+      return {
+        prose: proseEl ? measureLine(proseEl) : null,
+        tableLines: tableLines.map(measureLine),
+      };
+    });
+
+    const prose = measured.prose;
+    if (!prose) throw new Error('expected a plain prose .cm-line baseline but found none');
+
+    expect(
+      measured.tableLines.length,
+      'expected 3 table lines (header + delimiter + 1 data row)',
+    ).toBe(3);
+
+    const violations = measured.tableLines
+      .filter((t) => Math.abs(t.firstGlyphLeft - prose.firstGlyphLeft) > SUBPIXEL_TOLERANCE_PX)
+      .map(
+        (t) =>
+          `  • "${t.text}": firstGlyph.left=${t.firstGlyphLeft.toFixed(2)}px is ` +
+          `${(prose.firstGlyphLeft - t.firstGlyphLeft).toFixed(2)}px off the prose baseline ` +
+          `(${prose.firstGlyphLeft.toFixed(2)}px) — padding-left=${t.paddingLeftPx.toFixed(2)}px, ` +
+          `text-indent=${t.textIndentPx.toFixed(2)}px → net=${(t.paddingLeftPx + t.textIndentPx).toFixed(2)}px`,
+      );
+
+    expect(
+      violations,
+      `\nTable lines must start at the same x as surrounding prose in source mode. ` +
+        `The following are offset from the prose baseline (the bug: --list-hang unset on ` +
+        `table lines, so .cm-line's !important padding overrides the standalone .cm-table-row ` +
+        `padding while its -2ch text-indent still applies, pulling the table left):\n` +
+        violations.join('\n'),
+    ).toEqual([]);
+  });
 });
