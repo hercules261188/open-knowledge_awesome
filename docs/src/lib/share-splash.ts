@@ -113,7 +113,7 @@ function parseGitHubBlobUrl(input: string): ParsedGitHubBlobUrl | null {
 }
 
 export const SPLASH_DOWNLOAD_URL =
-  'https://github.com/inkeep/open-knowledge-legacy/releases/latest/download/Open-Knowledge-arm64.dmg';
+  'https://github.com/inkeep/open-knowledge/releases/latest/download/Open-Knowledge-arm64.dmg';
 
 export function buildCustomSchemeUrl(blobUrl: string): string {
   return `openknowledge://share?url=${encodeURIComponent(blobUrl)}`;
