@@ -10,8 +10,6 @@ function checkDocName(value: string, ctx: z.RefinementCtx): void {
 
 export const safeDocNameField = z.string().superRefine(checkDocName).optional();
 
-export const requiredSafeDocNameField = z.string().min(1).superRefine(checkDocName);
-
 export const agentIdentityFields = {
   agentId: z.string().optional(),
   agentName: z.string().optional(),

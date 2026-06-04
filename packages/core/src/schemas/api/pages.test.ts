@@ -17,9 +17,7 @@ import {
   RenamedDocMappingSchema,
   RenamePathRequestSchema,
   RenamePathSuccessSchema,
-  RenameRequestSchema,
   RenameRewrittenDocSchema,
-  RenameSuccessSchema,
   RollbackRequestSchema,
   RollbackSuccessSchema,
   TrashCleanupRequestSchema,
@@ -216,59 +214,12 @@ describe('HeadingEntrySchema and PageHeadingsSuccessSchema', () => {
   });
 });
 
-describe('RenameRequestSchema', () => {
-  test('parses a valid rename', () => {
-    const result = RenameRequestSchema.safeParse({ docName: 'a', newDocName: 'b' });
-    expect(result.success).toBe(true);
-  });
-  test('rejects empty docName', () => {
-    expect(RenameRequestSchema.safeParse({ docName: '', newDocName: 'b' }).success).toBe(false);
-  });
-  test('rejects empty newDocName', () => {
-    expect(RenameRequestSchema.safeParse({ docName: 'a', newDocName: '' }).success).toBe(false);
-  });
-  test('rejects structurally-invalid newDocName (same contract as the write path)', () => {
-    for (const newDocName of ['.foo', 'a/', '   leading', 'x\ty', '..']) {
-      expect(RenameRequestSchema.safeParse({ docName: 'a', newDocName }).success).toBe(false);
-    }
-  });
-  test('accepts optional summary', () => {
-    expect(
-      RenameRequestSchema.safeParse({
-        docName: 'a',
-        newDocName: 'b',
-        summary: 'optional summary',
-      }).success,
-    ).toBe(true);
-  });
-  test('rejects non-string summary', () => {
-    expect(
-      RenameRequestSchema.safeParse({ docName: 'a', newDocName: 'b', summary: 42 }).success,
-    ).toBe(false);
-  });
-});
-
 describe('RenameRewrittenDocSchema', () => {
   test('parses a valid entry', () => {
     expect(RenameRewrittenDocSchema.safeParse({ docName: 'a', rewrites: 5 }).success).toBe(true);
   });
   test('rejects negative rewrites', () => {
     expect(RenameRewrittenDocSchema.safeParse({ docName: 'a', rewrites: -1 }).success).toBe(false);
-  });
-});
-
-describe('RenameSuccessSchema', () => {
-  test('parses success with no rewrites', () => {
-    expect(RenameSuccessSchema.safeParse({ renamed: [], rewrittenDocs: [] }).success).toBe(true);
-  });
-  test('parses success with summary', () => {
-    expect(
-      RenameSuccessSchema.safeParse({
-        renamed: [{ fromDocName: 'a', toDocName: 'b' }],
-        rewrittenDocs: [{ docName: 'c', rewrites: 1 }],
-        summary: { value: 'Renamed a → b' },
-      }).success,
-    ).toBe(true);
   });
 });
 

@@ -66,14 +66,20 @@ test('POST /mcp serves MCP JSON-RPC over Streamable HTTP', async () => {
     const toolNames = toolsBody.result?.tools?.map((tool) => tool.name) ?? [];
     expect(toolNames).toContain('exec');
     expect(toolNames).toContain('search');
-    expect(toolNames).toContain('write_document');
-    expect(toolNames).toContain('edit_frontmatter');
+    expect(toolNames).toContain('write');
+    expect(toolNames).toContain('edit');
+    expect(toolNames).toContain('delete');
+    expect(toolNames).toContain('move');
     expect(toolNames).toContain('links');
-    expect(toolNames).toContain('rename');
-    expect(toolNames).toContain('version');
-    expect(toolNames).toContain('folder_config');
+    expect(toolNames).toContain('checkpoint');
+    expect(toolNames).toContain('restore_version');
+    expect(toolNames).toContain('conflicts');
+    expect(toolNames).toContain('palette');
     expect(toolNames).not.toContain('read_document');
-    expect(toolNames).not.toContain('frontmatter_patch');
+    expect(toolNames).not.toContain('write_document');
+    expect(toolNames).not.toContain('folder_config');
+    expect(toolNames).not.toContain('version');
+    expect(toolNames).not.toContain('list_conflicts');
   } finally {
     await server.cleanup();
   }

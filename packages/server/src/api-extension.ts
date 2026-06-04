@@ -199,7 +199,7 @@ import { getLocalDir } from './config/paths.ts';
 import { CONFIG_VALIDATION_REVERT_ORIGIN } from './config-edit-origin.ts';
 import { DocInConflictError, isDocInConflict, respondDocInConflict } from './conflict-errors.ts';
 import { enrichDirectory } from './content/enrichment.ts';
-import { applyNestedFolderRulesUpsert } from './content/folder-rule-write.ts';
+import { applyFolderFrontmatterPatch } from './content/folder-frontmatter-write.ts';
 import { applySubstitution, todayIsoUtc } from './content/substitution.ts';
 import {
   resolveProjectTemplates,
@@ -4357,7 +4357,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             res,
             400,
             'urn:ok:error:frontmatter-edit-not-supported',
-            'Frontmatter edits are not supported via edit_document. Use write_document with position:"replace" to rewrite the document including its YAML block.',
+            'Frontmatter edits are not supported via a body find/replace. Use edit({ document: { path, frontmatter } }) to change frontmatter, or write({ document: { path, content, position: "replace" } }) to rewrite the whole document including its YAML block.',
             { handler: 'agent-patch' },
           );
           return;
@@ -4516,7 +4516,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             res,
             400,
             'urn:ok:error:frontmatter-edit-not-supported',
-            'Frontmatter edits are not supported via edit_document. Use write_document with position:"replace" to rewrite the document including its YAML block.',
+            'Frontmatter edits are not supported via a body find/replace. Use edit({ document: { path, frontmatter } }) to change frontmatter, or write({ document: { path, content, position: "replace" } }) to rewrite the whole document including its YAML block.',
             { handler: 'agent-patch' },
           );
           return;
@@ -5065,7 +5065,16 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         }
 
         const resolvedContentRoot = contentRoot ?? '.';
-        const result = await saveVersion(shadow, resolvedContentRoot, writers);
+        const checkpointSummary = normalizeSummary(
+          typeof body.summary === 'string' ? body.summary : undefined,
+        );
+        const result = await saveVersion(
+          shadow,
+          resolvedContentRoot,
+          writers,
+          'main',
+          checkpointSummary.kind === 'value' ? checkpointSummary.value : undefined,
+        );
 
         getLogger('history').info({ checkpointRef: result.checkpointRef }, 'checkpoint');
 
@@ -9556,20 +9565,15 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
         const validated = validateFolderRel(body.path, res, 'path', 'folder-config-put');
         if (!validated) return;
 
-        const match = validated.folderRel === '' ? '**' : `${validated.folderRel}/**`;
-
-        const allApplied: Array<{ match: string; path: string; action: 'written' | 'deleted' }> =
-          [];
+        const allApplied: Array<{ path: string; action: 'written' | 'deleted' | 'noop' }> = [];
         if (body.frontmatter !== undefined) {
-          const result = applyNestedFolderRulesUpsert({
-            projectDir: validated.resolvedContentDir,
-            rules: [{ match, frontmatter: pickFrontmatterFields(body.frontmatter) }],
+          const result = applyFolderFrontmatterPatch({
+            anchorDir: validated.resolvedContentDir,
+            folderRel: validated.folderRel,
+            patch: body.frontmatter,
           });
           if (!result.ok) {
-            const status =
-              result.error.code === 'WRITE_ERROR' || result.error.code === 'BAD_PROJECT_DIR'
-                ? 500
-                : 400;
+            const status = result.error.code === 'WRITE_ERROR' ? 500 : 400;
             const urn =
               status === 500
                 ? 'urn:ok:error:internal-server-error'
@@ -9582,7 +9586,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
             });
             return;
           }
-          allApplied.push(...result.applied);
+          allApplied.push({ path: result.path, action: result.action });
         }
 
         successResponse(

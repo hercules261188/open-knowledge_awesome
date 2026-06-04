@@ -45,4 +45,4 @@ This pack ships the Markdown half (folders + templates + this skill); OK is the 
 
 ## Templates
 
-Create with `write_document({ template: "<name>", … })`. Templates carry the structure (including the compiled-truth / `--- timeline ---` separator) plus short inline reminders at the point of use; this skill holds the full convention, so prefer it as the canonical reference if the two ever disagree.
+Create with `write({ document: { path: "<path>", template: "<name>" } })`. Templates carry the structure (including the compiled-truth / `--- timeline ---` separator) plus short inline reminders at the point of use; this skill holds the full convention, so prefer it as the canonical reference if the two ever disagree.

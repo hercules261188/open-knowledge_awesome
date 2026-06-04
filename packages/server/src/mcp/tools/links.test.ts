@@ -30,8 +30,8 @@ type LinkKind = 'backlinks' | 'forward' | 'dead' | 'orphans' | 'hubs' | 'suggest
 
 interface LinksHandlerArgs {
   kind: LinkKind | LinkKind[];
-  docName?: string;
-  sourceDocNames?: string[];
+  document?: string;
+  sourceDocuments?: string[];
   mode?: 'incoming' | 'outgoing' | 'both';
   limit?: number;
 }
@@ -184,7 +184,7 @@ describe('links — registration + DESCRIPTION', () => {
     expect(DESCRIPTION).toContain('`orphans`');
     expect(DESCRIPTION).toContain('`hubs`');
     expect(DESCRIPTION).toContain('`suggest`');
-    expect(DESCRIPTION).toContain('sourceDocNames');
+    expect(DESCRIPTION).toContain('sourceDocuments');
     expect(DESCRIPTION).toContain('mode');
     expect(DESCRIPTION).toContain('limit');
   });
@@ -203,7 +203,7 @@ describe('links — kind=backlinks', () => {
     bindTestUiLock(tmpDir);
     const { server, getTool } = createFakeServer();
     register(server, makeDeps(baseUrl, tmpDir));
-    const result = await getTool().handler({ kind: 'backlinks', docName: 'target.md' });
+    const result = await getTool().handler({ kind: 'backlinks', document: 'target.md' });
     expect(seenRequests).toContain('/api/backlinks?docName=target');
     const s = result.structuredContent as {
       backlinks: Array<{ source: string; previewUrl: string; previewUrlSource: string }>;
@@ -221,13 +221,13 @@ describe('links — kind=backlinks', () => {
     register(server, makeDeps(baseUrl, tmpDir));
     const result = await getTool().handler({ kind: 'backlinks' });
     expect(result.isError).toBe(true);
-    expect(result.content[0]?.text).toContain('kind=backlinks requires `docName`');
+    expect(result.content[0]?.text).toContain('kind=backlinks requires `document`');
   });
 
   test('previewUrl null when no UI lock is present', async () => {
     const { server, getTool } = createFakeServer();
     register(server, makeDeps(baseUrl, tmpDir));
-    const result = await getTool().handler({ kind: 'backlinks', docName: 'target' });
+    const result = await getTool().handler({ kind: 'backlinks', document: 'target' });
     const s = result.structuredContent as {
       backlinks: Array<{ previewUrl: string | null }>;
       ui?: unknown;
@@ -242,7 +242,7 @@ describe('links — kind=forward', () => {
     bindTestUiLock(tmpDir);
     const { server, getTool } = createFakeServer();
     register(server, makeDeps(baseUrl, tmpDir));
-    const result = await getTool().handler({ kind: 'forward', docName: 'source' });
+    const result = await getTool().handler({ kind: 'forward', document: 'source' });
     const s = result.structuredContent as {
       forwardLinks: Array<{
         kind: string;
@@ -264,7 +264,7 @@ describe('links — kind=forward', () => {
     register(server, makeDeps(baseUrl, tmpDir));
     const result = await getTool().handler({ kind: 'forward' });
     expect(result.isError).toBe(true);
-    expect(result.content[0]?.text).toContain('kind=forward requires `docName`');
+    expect(result.content[0]?.text).toContain('kind=forward requires `document`');
   });
 });
 
@@ -274,14 +274,14 @@ describe('links — kind=dead', () => {
     register(server, makeDeps(baseUrl, tmpDir));
     const result = await getTool().handler({
       kind: 'dead',
-      sourceDocNames: ['alpha.md', 'beta'],
+      sourceDocuments: ['alpha.md', 'beta'],
     });
     expect(seenRequests).toContain('/api/dead-links?sourceDocName=alpha&sourceDocName=beta');
     expect(result.content[0]?.text).toContain('missing-target');
     expect(result.structuredContent).toBeDefined();
   });
 
-  test('hits /api/dead-links with no query when sourceDocNames is absent', async () => {
+  test('hits /api/dead-links with no query when sourceDocuments is absent', async () => {
     const { server, getTool } = createFakeServer();
     register(server, makeDeps(baseUrl, tmpDir));
     await getTool().handler({ kind: 'dead' });
@@ -364,7 +364,7 @@ describe('links — kind=suggest', () => {
   test('normalizes trailing markdown extensions and returns the suggest payload', async () => {
     const { server, getTool } = createFakeServer();
     register(server, makeDeps(baseUrl, tmpDir));
-    const result = await getTool().handler({ kind: 'suggest', docName: 'project-alpha.md' });
+    const result = await getTool().handler({ kind: 'suggest', document: 'project-alpha.md' });
     expect(result.content[0]?.text).toContain('"docName": "project-alpha"');
     const expectedBody = {
       target: { docName: 'project-alpha', title: 'Project Alpha', aliases: ['PA'] },
@@ -386,7 +386,7 @@ describe('links — kind=suggest', () => {
     bindTestUiLock(tmpDir);
     const { server, getTool } = createFakeServer();
     register(server, makeDeps(baseUrl, tmpDir));
-    const result = await getTool().handler({ kind: 'suggest', docName: 'project-alpha' });
+    const result = await getTool().handler({ kind: 'suggest', document: 'project-alpha' });
     expect(result.structuredContent).toMatchObject({
       suggest: {
         previewUrl: '/#/project-alpha',
@@ -398,7 +398,7 @@ describe('links — kind=suggest', () => {
   test('propagates HTTP endpoint errors to the caller', async () => {
     const { server, getTool } = createFakeServer();
     register(server, makeDeps(baseUrl, tmpDir));
-    const result = await getTool().handler({ kind: 'suggest', docName: 'missing-page' });
+    const result = await getTool().handler({ kind: 'suggest', document: 'missing-page' });
     expect(result.isError).toBe(true);
     expect(result.content[0]?.text).toBe('Error: Page not found');
   });
@@ -408,7 +408,7 @@ describe('links — kind=suggest', () => {
     register(server, makeDeps(baseUrl, tmpDir));
     const result = await getTool().handler({ kind: 'suggest' });
     expect(result.isError).toBe(true);
-    expect(result.content[0]?.text).toContain('kind=suggest requires `docName`');
+    expect(result.content[0]?.text).toContain('kind=suggest requires `document`');
   });
 });
 
@@ -438,7 +438,7 @@ describe('links — multi-kind (array)', () => {
       errors: Record<string, string>;
     };
     expect(s.deadLinks).toHaveLength(1);
-    expect(s.errors?.backlinks).toContain('requires `docName`');
+    expect(s.errors?.backlinks).toContain('requires `document`');
   });
 
   test('a single-element array behaves like the scalar form', async () => {

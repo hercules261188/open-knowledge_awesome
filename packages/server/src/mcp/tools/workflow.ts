@@ -1,0 +1,106 @@
+import { z } from 'zod';
+import { buildConsolidateBody } from './consolidate-body.ts';
+import { buildDiscoverBody } from './discover-body.ts';
+import { buildIngestBody } from './ingest-body.ts';
+import { buildResearchBody } from './research-body.ts';
+import type { ServerInstance, WorkflowToolDeps } from './shared.ts';
+import {
+  buildWorkflowHandler,
+  outputSchemaWithText,
+  previewUrlOutputField,
+  ROUTED_CWD_DESCRIPTION,
+  resolveProjectConfigContext,
+  textPlusStructured,
+  textResult,
+} from './shared.ts';
+
+export const DESCRIPTION = [
+  'Procedural guides for the three-layer wiki workflow + brownfield onboarding. Returns a numbered plan (instructional text, not data) — you execute it. Dispatches on `kind`:',
+  '',
+  '- `kind: "ingest"` — capture an external source (URL or local file) into the KB as raw, verbatim reference material (no analysis). Requires `source`.',
+  '- `kind: "research"` — gather sources and write provisional findings for a question. Requires `topic`.',
+  '- `kind: "consolidate"` — fold provisional material into a canonical article. Requires `topic`.',
+  '- `kind: "discover"` — extract conventions from an existing repo (folder frontmatter + templates + link graph). No payload.',
+  '',
+  '**Parameters:**',
+  '- `kind` — `ingest` | `research` | `consolidate` | `discover`.',
+  '- `source` — Required for `ingest`: the URL / file path / identifier to capture.',
+  '- `topic` — Required for `research` / `consolidate`: the topic, question, or anchor URL.',
+  '- `cwd` (optional) — Project root (see `cwd` description below).',
+].join('\n');
+
+export function register(server: ServerInstance, deps: WorkflowToolDeps): void {
+  const ingest = buildWorkflowHandler('ingest', deps, 'source', buildIngestBody);
+  const research = buildWorkflowHandler('research', deps, 'topic', buildResearchBody);
+  const consolidate = buildWorkflowHandler('consolidate', deps, 'topic', buildConsolidateBody);
+
+  server.registerTool(
+    'workflow',
+    {
+      description: DESCRIPTION,
+      inputSchema: {
+        kind: z
+          .enum(['ingest', 'research', 'consolidate', 'discover'])
+          .describe('Which workflow guide to return.'),
+        source: z
+          .string()
+          .optional()
+          .describe('Required for `kind: "ingest"` — the URL / file / identifier to capture.'),
+        topic: z
+          .string()
+          .optional()
+          .describe(
+            'Required for `kind: "research"` / `"consolidate"` — the topic / question / anchor URL.',
+          ),
+        cwd: z.string().optional().describe(ROUTED_CWD_DESCRIPTION),
+      },
+      outputSchema: outputSchemaWithText({
+        previewUrl: previewUrlOutputField.describe(
+          'Always null — a workflow guide is prose, not a previewable document.',
+        ),
+      }),
+    },
+    async (args: {
+      kind: 'ingest' | 'research' | 'consolidate' | 'discover';
+      source?: string;
+      topic?: string;
+      cwd?: string;
+    }) => {
+      switch (args.kind) {
+        case 'ingest':
+          if (!args.source) {
+            return textResult(
+              'Error: workflow({ kind: "ingest" }) requires `source` — the URL / file / identifier to capture. e.g. workflow({ kind: "ingest", source: "https://example.com/spec" }).',
+              true,
+            );
+          }
+          return ingest(args);
+        case 'research':
+          if (!args.topic) {
+            return textResult(
+              'Error: workflow({ kind: "research" }) requires `topic` — the question or topic to investigate. e.g. workflow({ kind: "research", topic: "rate-limit strategies" }).',
+              true,
+            );
+          }
+          return research(args);
+        case 'consolidate':
+          if (!args.topic) {
+            return textResult(
+              'Error: workflow({ kind: "consolidate" }) requires `topic` — the topic to fold into a canonical article. e.g. workflow({ kind: "consolidate", topic: "rate-limit strategies" }).',
+              true,
+            );
+          }
+          return consolidate(args);
+        case 'discover': {
+          const context = await resolveProjectConfigContext(deps.resolveCwd, deps.config, args.cwd);
+          if (!context.ok) return textResult(`Error: ${context.error}`, true);
+          return textPlusStructured(buildDiscoverBody(context.config.content.dir), {
+            previewUrl: null,
+          });
+        }
+        default:
+          return textResult('Error: unknown workflow kind.', true);
+      }
+    },
+  );
+}

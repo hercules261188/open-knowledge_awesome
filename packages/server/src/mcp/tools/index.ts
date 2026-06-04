@@ -2,97 +2,58 @@ import type { AgentIdentity } from '../agent-identity.ts';
 import { getCurrentMcpLogger, type McpLogger } from '../logger.ts';
 import { createLoggedServer } from '../tool-logging.ts';
 import {
-  DESCRIPTION as CONSOLIDATE_DESCRIPTION,
-  register as registerConsolidate,
-} from './consolidate.ts';
+  DESCRIPTION as CHECKPOINT_DESCRIPTION,
+  register as registerCheckpoint,
+} from './checkpoint.ts';
+import { DESCRIPTION as CONFIG_DESCRIPTION, register as registerConfig } from './config.ts';
 import {
-  DESCRIPTION as DELETE_DOCUMENT_DESCRIPTION,
-  register as registerDeleteDocument,
-} from './delete-document.ts';
-import { DESCRIPTION as DISCOVER_DESCRIPTION, register as registerDiscover } from './discover.ts';
-import {
-  DESCRIPTION as EDIT_DOCUMENT_DESCRIPTION,
-  register as registerEditDocument,
-} from './edit-document.ts';
-import {
-  DESCRIPTION as EDIT_FRONTMATTER_DESCRIPTION,
-  register as registerEditFrontmatter,
-} from './edit-frontmatter.ts';
+  DESCRIPTION as CONFLICTS_DESCRIPTION,
+  register as registerConflicts,
+} from './conflicts.ts';
+import { DESCRIPTION as DELETE_DESCRIPTION, register as registerDelete } from './delete.ts';
+import { DESCRIPTION as EDIT_DESCRIPTION, register as registerEdit } from './edit.ts';
 import { DESCRIPTION as EXEC_DESCRIPTION, register as registerExec } from './exec.ts';
 import {
-  DESCRIPTION as FOLDER_CONFIG_DESCRIPTION,
-  register as registerFolderConfig,
-} from './folder-config.ts';
-import {
-  DESCRIPTION as GET_AUTHORING_PALETTE_DESCRIPTION,
-  register as registerGetAuthoringPalette,
-} from './get-authoring-palette.ts';
-import {
-  DESCRIPTION as GET_COMPONENTS_DESCRIPTION,
-  register as registerGetComponents,
-} from './get-components.ts';
-import {
-  DESCRIPTION as GET_CONFIG_DESCRIPTION,
-  register as registerGetConfig,
-} from './get-config.ts';
-import {
-  DESCRIPTION as GET_CONFLICT_CONTENT_DESCRIPTION,
-  register as registerGetConflictContent,
-} from './get-conflict-content.ts';
-import {
-  DESCRIPTION as GET_HISTORY_DESCRIPTION,
-  register as registerGetHistory,
-} from './get-history.ts';
-import {
-  DESCRIPTION as GET_PREVIEW_URL_DESCRIPTION,
-  register as registerGetPreviewUrl,
+  DESCRIPTION as PREVIEW_URL_DESCRIPTION,
+  register as registerPreviewUrl,
 } from './get-preview-url.ts';
-import { DESCRIPTION as INGEST_DESCRIPTION, register as registerIngest } from './ingest.ts';
+import { DESCRIPTION as HISTORY_DESCRIPTION, register as registerHistory } from './history.ts';
 import { DESCRIPTION as LINKS_DESCRIPTION, register as registerLinks } from './links.ts';
-import {
-  DESCRIPTION as LIST_CONFLICTS_DESCRIPTION,
-  register as registerListConflicts,
-} from './list-conflicts.ts';
-import { DESCRIPTION as RENAME_DESCRIPTION, register as registerRename } from './rename.ts';
-import { DESCRIPTION as RESEARCH_DESCRIPTION, register as registerResearch } from './research.ts';
+import { DESCRIPTION as MOVE_DESCRIPTION, register as registerMove } from './move.ts';
+import { DESCRIPTION as PALETTE_DESCRIPTION, register as registerPalette } from './palette.ts';
 import {
   DESCRIPTION as RESOLVE_CONFLICT_DESCRIPTION,
   register as registerResolveConflict,
 } from './resolve-conflict.ts';
+import {
+  DESCRIPTION as RESTORE_VERSION_DESCRIPTION,
+  register as registerRestoreVersion,
+} from './restore-version.ts';
 import { register as registerSearch, DESCRIPTION as SEARCH_DESCRIPTION } from './search.ts';
 import {
   register as registerShareLink,
   DESCRIPTION as SHARE_LINK_DESCRIPTION,
 } from './share-link.ts';
 import type { ConfigOrResolver, ServerInstance, ServerUrlOrResolver } from './shared.ts';
-import { register as registerVersion, DESCRIPTION as VERSION_DESCRIPTION } from './version.ts';
-import {
-  register as registerWriteDocument,
-  DESCRIPTION as WRITE_DOCUMENT_DESCRIPTION,
-} from './write-document.ts';
+import { register as registerWorkflow, DESCRIPTION as WORKFLOW_DESCRIPTION } from './workflow.ts';
+import { register as registerWrite, DESCRIPTION as WRITE_DESCRIPTION } from './write.ts';
 
 const _TOOL_DESCRIPTIONS = {
   exec: EXEC_DESCRIPTION,
-  ingest: INGEST_DESCRIPTION,
-  research: RESEARCH_DESCRIPTION,
-  consolidate: CONSOLIDATE_DESCRIPTION,
-  discover: DISCOVER_DESCRIPTION,
-  rename: RENAME_DESCRIPTION,
+  workflow: WORKFLOW_DESCRIPTION,
+  move: MOVE_DESCRIPTION,
   search: SEARCH_DESCRIPTION,
   links: LINKS_DESCRIPTION,
-  write_document: WRITE_DOCUMENT_DESCRIPTION,
-  edit_document: EDIT_DOCUMENT_DESCRIPTION,
-  edit_frontmatter: EDIT_FRONTMATTER_DESCRIPTION,
-  delete_document: DELETE_DOCUMENT_DESCRIPTION,
-  get_history: GET_HISTORY_DESCRIPTION,
-  version: VERSION_DESCRIPTION,
-  get_components: GET_COMPONENTS_DESCRIPTION,
-  get_authoring_palette: GET_AUTHORING_PALETTE_DESCRIPTION,
-  get_config: GET_CONFIG_DESCRIPTION,
-  get_preview_url: GET_PREVIEW_URL_DESCRIPTION,
-  folder_config: FOLDER_CONFIG_DESCRIPTION,
-  list_conflicts: LIST_CONFLICTS_DESCRIPTION,
-  get_conflict_content: GET_CONFLICT_CONTENT_DESCRIPTION,
+  write: WRITE_DESCRIPTION,
+  edit: EDIT_DESCRIPTION,
+  delete: DELETE_DESCRIPTION,
+  history: HISTORY_DESCRIPTION,
+  checkpoint: CHECKPOINT_DESCRIPTION,
+  restore_version: RESTORE_VERSION_DESCRIPTION,
+  palette: PALETTE_DESCRIPTION,
+  config: CONFIG_DESCRIPTION,
+  preview_url: PREVIEW_URL_DESCRIPTION,
+  conflicts: CONFLICTS_DESCRIPTION,
   resolve_conflict: RESOLVE_CONFLICT_DESCRIPTION,
   share_link: SHARE_LINK_DESCRIPTION,
 } as const;
@@ -138,14 +99,7 @@ export function registerAllTools(server: ServerInstance, opts: RegisterAllToolsO
     config: opts.config,
   });
 
-  registerIngest(registrationServer, { config: opts.config, resolveCwd: named('ingest') });
-  registerResearch(registrationServer, { config: opts.config, resolveCwd: named('research') });
-  registerConsolidate(registrationServer, {
-    config: opts.config,
-    resolveCwd: named('consolidate'),
-  });
-
-  registerDiscover(registrationServer, { config: opts.config, resolveCwd: named('discover') });
+  registerWorkflow(registrationServer, { config: opts.config, resolveCwd: named('workflow') });
 
   registerSearch(registrationServer, {
     resolveCwd: named('search'),
@@ -158,78 +112,64 @@ export function registerAllTools(server: ServerInstance, opts: RegisterAllToolsO
     resolveCwd: named('links'),
   });
 
-  registerWriteDocument(registrationServer, {
+  registerWrite(registrationServer, {
     serverUrl: opts.serverUrl,
     config: opts.config,
-    resolveCwd: named('write_document'),
+    resolveCwd: named('write'),
     identityRef: opts.identityRef,
   });
-  registerEditDocument(registrationServer, {
+  registerEdit(registrationServer, {
     serverUrl: opts.serverUrl,
     config: opts.config,
-    resolveCwd: named('edit_document'),
+    resolveCwd: named('edit'),
     identityRef: opts.identityRef,
   });
-  registerDeleteDocument(registrationServer, {
+  registerDelete(registrationServer, {
     serverUrl: opts.serverUrl,
     config: opts.config,
-    resolveCwd: named('delete_document'),
+    resolveCwd: named('delete'),
     identityRef: opts.identityRef,
   });
-  registerEditFrontmatter(registrationServer, {
+  registerMove(registrationServer, {
     serverUrl: opts.serverUrl,
     config: opts.config,
-    resolveCwd: named('edit_frontmatter'),
+    resolveCwd: named('move'),
     identityRef: opts.identityRef,
   });
-  registerRename(registrationServer, {
+  registerHistory(registrationServer, {
     serverUrl: opts.serverUrl,
     config: opts.config,
-    resolveCwd: named('rename'),
+    resolveCwd: named('history'),
+  });
+  registerCheckpoint(registrationServer, {
+    serverUrl: opts.serverUrl,
+    config: opts.config,
+    resolveCwd: named('checkpoint'),
     identityRef: opts.identityRef,
   });
-  registerGetHistory(registrationServer, {
+  registerRestoreVersion(registrationServer, {
     serverUrl: opts.serverUrl,
     config: opts.config,
-    resolveCwd: named('get_history'),
-  });
-  registerVersion(registrationServer, {
-    serverUrl: opts.serverUrl,
-    config: opts.config,
-    resolveCwd: named('version'),
+    resolveCwd: named('restore_version'),
     identityRef: opts.identityRef,
   });
-  registerGetComponents(registrationServer, {
-    resolveCwd: named('get_components'),
-    config: opts.config,
-  });
-  registerGetAuthoringPalette(registrationServer, {
-    resolveCwd: named('get_authoring_palette'),
+  registerPalette(registrationServer, {
+    resolveCwd: named('palette'),
     config: opts.config,
   });
 
-  registerGetConfig(registrationServer, {
+  registerConfig(registrationServer, {
     config: opts.config,
-    resolveCwd: named('get_config'),
+    resolveCwd: named('config'),
   });
-  registerGetPreviewUrl(registrationServer, {
+  registerPreviewUrl(registrationServer, {
     config: opts.config,
-    resolveCwd: named('get_preview_url'),
+    resolveCwd: named('preview_url'),
   });
-  registerFolderConfig(registrationServer, {
-    config: opts.config,
-    resolveCwd: named('folder_config'),
-  });
-
-  registerListConflicts(registrationServer, {
+  registerConflicts(registrationServer, {
     serverUrl: opts.serverUrl,
     config: opts.config,
-    resolveCwd: named('list_conflicts'),
-  });
-  registerGetConflictContent(registrationServer, {
-    serverUrl: opts.serverUrl,
-    config: opts.config,
-    resolveCwd: named('get_conflict_content'),
+    resolveCwd: named('conflicts'),
   });
   registerResolveConflict(registrationServer, {
     serverUrl: opts.serverUrl,

@@ -113,7 +113,7 @@ describe('tool logging wrapper', () => {
 
     expect(
       (wrapped as unknown as { tool: (...args: unknown[]) => unknown }).tool(
-        'get_preview_url',
+        'preview_url',
         'desc',
         { docName: 'string' },
         originalHandler,
@@ -133,7 +133,7 @@ describe('tool logging wrapper', () => {
     );
 
     const finish = JSON.parse(stderrLines[1] ?? '');
-    expect(finish.tool).toBe('get_preview_url');
+    expect(finish.tool).toBe('preview_url');
     expect(finish.result.previewUrl).toBeNull();
   });
 

@@ -1,6 +1,6 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { z } from 'zod';
-import { agentIdentityFields, requiredSafeDocNameField, summaryField } from './_shared.ts';
+import { agentIdentityFields, summaryField } from './_shared.ts';
 import { ContentDivergenceWarningSchema, SummaryResponseFieldSchema } from './agent-write.ts';
 
 export const RenamedDocMappingSchema = z
@@ -109,16 +109,6 @@ export const PageHeadingsSuccessSchema = z
   .loose() satisfies StandardSchemaV1;
 export type PageHeadingsSuccess = z.infer<typeof PageHeadingsSuccessSchema>;
 
-export const RenameRequestSchema = z
-  .object({
-    docName: requiredSafeDocNameField,
-    newDocName: requiredSafeDocNameField,
-    summary: summaryField,
-    ...agentIdentityFields,
-  })
-  .loose() satisfies StandardSchemaV1;
-export type RenameRequest = z.infer<typeof RenameRequestSchema>;
-
 export const RenameRewrittenDocSchema = z
   .object({
     docName: z.string().min(1),
@@ -126,15 +116,6 @@ export const RenameRewrittenDocSchema = z
   })
   .loose() satisfies StandardSchemaV1;
 export type RenameRewrittenDoc = z.infer<typeof RenameRewrittenDocSchema>;
-
-export const RenameSuccessSchema = z
-  .object({
-    renamed: z.array(RenamedDocMappingSchema),
-    rewrittenDocs: z.array(RenameRewrittenDocSchema),
-    summary: SummaryResponseFieldSchema.optional(),
-  })
-  .loose() satisfies StandardSchemaV1;
-export type RenameSuccess = z.infer<typeof RenameSuccessSchema>;
 
 export const RenamePathRequestSchema = z
   .object({

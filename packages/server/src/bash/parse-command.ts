@@ -165,13 +165,13 @@ function opTokenError(token: ShellOpToken): ParseCommandError {
   if (WRITE_OPS.has(op)) {
     return {
       category: 'write_blocked',
-      message: `Write operation blocked: '${op}'. exec is read-only. For document changes, use write_document or edit_document.`,
+      message: `Write operation blocked: '${op}'. exec is read-only. For document changes, use the \`write\` or \`edit\` tool.`,
     };
   }
   if (SHELL_CONSTRUCT_OPS.has(op)) {
     return {
       category: 'shell_construct_blocked',
-      message: `Shell construct '${op}' is not supported. Only pipes (|) are allowed between allowlisted stages.`,
+      message: `Shell construct '${op}' is not supported — exec runs ONE command or a pipe (|), not a shell. Run separate exec calls, or pass multiple paths to one command (e.g. \`ls -A a b c\`, \`cat a b c\`).`,
     };
   }
   return {
@@ -228,7 +228,7 @@ function checkStage(stage: Stage): ParseCommandError | null {
     if (UNIVERSAL_FLAG_DENY.has(arg) || UNIVERSAL_FLAG_PREFIX_DENY.some((p) => arg.startsWith(p))) {
       return {
         category: 'write_blocked',
-        message: `Write operation blocked: '${arg}'. exec is read-only. For document changes, use write_document or edit_document.`,
+        message: `Write operation blocked: '${arg}'. exec is read-only. For document changes, use the \`write\` or \`edit\` tool.`,
       };
     }
     if (stage.command === 'find' && FIND_FLAG_DENY.has(arg)) {

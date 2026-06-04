@@ -138,7 +138,7 @@ const VIEW_GROUP_RULES: Array<[RegExp, string]> = [
   [/^components\/Frontmatter/, 'Property Panel'],
   [/^components\/Template/, 'Templates'],
   [/^components\/Graph/, 'DocPanel / Graph'],
-  [/^components\/FolderDefaults/, 'Settings'],
+  [/^components\/FolderProperties/, 'Settings'],
   [/^components\/Folder/, 'Folder overview'],
   [/^components\/EmptyEditor/, 'Empty state'],
   [/^components\/Empty/, 'Empty state'],

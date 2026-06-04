@@ -380,7 +380,7 @@ describe('POST /api/agent-patch (edit_document) — frontmatter rejection', () =
       const parsed = JSON.parse(response.body);
       expect(parsed.type).toBe('urn:ok:error:frontmatter-edit-not-supported');
       expect(parsed.title).toContain('Frontmatter edits are not supported');
-      expect(parsed.title).toContain('write_document');
+      expect(parsed.title).toContain('edit(');
 
       expect(ytextFm(session.dc.document)).toBe(existingFm);
       expect(fmMap(session.dc.document)).toEqual({

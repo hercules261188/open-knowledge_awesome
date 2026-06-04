@@ -27,4 +27,4 @@ published/  shipped work; treat as immutable
 
 ## Templates
 
-Create with `write_document({ template: "<name>", … })`. Templates carry only structure; section meaning lives here, not in the document body.
+Create with `write({ document: { path, template: "<name>" } })`. Templates carry only structure; section meaning lives here, not in the document body.

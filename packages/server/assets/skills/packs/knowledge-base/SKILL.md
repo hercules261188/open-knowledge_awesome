@@ -1,6 +1,6 @@
 ---
 name: open-knowledge-pack-knowledge-base
-description: "How to work in a Knowledge Base project (the `knowledge-base` starter pack). Read when the project has the three-layer source-grounded layout — `external-sources/` → `research/` → `articles/` — wired to the ingest / research / consolidate MCP tools. Carries the pack's workflow, per-folder rules, status flows, and log discipline so this guidance does NOT live inside template bodies or log.md. Complements the platform `open-knowledge` skill; does not replace it."
+description: "How to work in a Knowledge Base project (the `knowledge-base` starter pack). Read when the project has the three-layer source-grounded layout — `external-sources/` → `research/` → `articles/` — wired to the `workflow` MCP tool's ingest / research / consolidate kinds. Carries the pack's workflow, per-folder rules, status flows, and log discipline so this guidance does NOT live inside template bodies or log.md. Complements the platform `open-knowledge` skill; does not replace it."
 compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires Open Knowledge MCP server. Installed project-local by `ok seed --pack knowledge-base`."
 metadata:
   pack: "knowledge-base"
@@ -23,7 +23,7 @@ research/           provisional analysis            (produced by `research`)
 articles/           canonical, decided knowledge     (produced by `consolidate`)
 ```
 
-The loop is **ingest → research → consolidate**. Every downstream claim traces upstream to a preserved source. Cite local paths in `external-sources/`, never bare web URLs — the KB must survive link rot.
+The loop is **ingest → research → consolidate** — each a `workflow({ kind })` guide you invoke (`workflow({ kind: 'ingest' })`, etc.). Every downstream claim traces upstream to a preserved source. Cite local paths in `external-sources/`, never bare web URLs — the KB must survive link rot.
 
 ## Per-folder rules
 
@@ -46,7 +46,7 @@ When a new article supersedes an older one, add the older article's path to the 
 
 There is a `log.md` at the project root. **Append one dated entry after any turn that creates, edits, or restructures content** — one entry per turn, not per file. Silent edits break the audit trail.
 
-Log: `ingest` runs (new sources), `research` / `consolidate` runs (provisional or canonical articles), direct `write_document` / `edit_document` / rename / delete outside the three loop tools, `discover` runs, folder restructures, and `.ok/config.yml` changes.
+Log: `ingest` runs (new sources), `research` / `consolidate` runs (provisional or canonical articles), direct `write` / `edit` / `move` / `delete` outside the three loop tools, `discover` runs, folder restructures, and `.ok/config.yml` changes.
 
 **Reference docs as markdown links, not bare paths** — `[path/to/doc](./path/to/doc.md)`, so the entry shows up in `links({ kind: "backlinks" })` for those docs. A bare path string does not register in the graph.
 
@@ -63,4 +63,4 @@ Entry shape:
 
 ## Templates
 
-Each folder has a starter template (`clip`, `research-log`, `article`). Create with `write_document({ template: "<name>", docName, … })`. Templates carry only structure (headings + frontmatter scaffold) — the meaning of each field and section is described above, not repeated inside the document body.
+Each folder has a starter template (`clip`, `research-log`, `article`). Create with `write({ document: { path, template: "<name>" } })`. Templates carry only structure (headings + frontmatter scaffold) — the meaning of each field and section is described above, not repeated inside the document body.

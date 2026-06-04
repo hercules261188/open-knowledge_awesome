@@ -32,7 +32,7 @@ export const REMOVED_KEYS: readonly RemovedKey[] = [
     redirect: [
       'folders is no longer a top-level config field.',
       "A folder's own frontmatter (open-shape, like a doc's) lives in nested `<folder>/.ok/frontmatter.yml`; new-doc starting properties come from templates in `<folder>/.ok/templates/`.",
-      'Edit via the folder overview in the editor sidebar, or the `folder_config` MCP tool.',
+      'Edit via the folder overview in the editor sidebar, or `edit({ folder: { path, frontmatter } })` via the MCP.',
       MIGRATE_HINT,
     ].join(' '),
   },

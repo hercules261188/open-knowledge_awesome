@@ -1,7 +1,7 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { z } from 'zod';
 
-import { agentIdentityFields } from './_shared.ts';
+import { agentIdentityFields, summaryField } from './_shared.ts';
 
 export const SaveVersionWriterSchema = z
   .object({
@@ -15,6 +15,7 @@ export type SaveVersionWriter = z.infer<typeof SaveVersionWriterSchema>;
 export const SaveVersionRequestSchema = z
   .object({
     writers: z.array(SaveVersionWriterSchema).optional(),
+    summary: summaryField,
     ...agentIdentityFields,
   })
   .loose() satisfies StandardSchemaV1;

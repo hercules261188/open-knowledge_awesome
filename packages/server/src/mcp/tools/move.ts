@@ -1,0 +1,301 @@
+import { existsSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import { z } from 'zod';
+import type { AgentIdentity } from '../agent-identity.ts';
+import { resolveWithinRoot } from './path-safety.ts';
+import { type PreviewUrlSource, resolvePreviewUrlForTool } from './preview-url.ts';
+import type { ConfigOrResolver, ServerInstance, ServerUrlOrResolver } from './shared.ts';
+import {
+  agentIdentityFields,
+  HOCUSPOCUS_NOT_RUNNING_ERROR,
+  httpPost,
+  looseObjectArray,
+  normalizeDocName,
+  outputSchemaWithText,
+  parseRenameCollidingPairs,
+  previewUrlSourceField,
+  previousPreviewUrlField,
+  type RenameCollisionPair,
+  ROUTED_CWD_DESCRIPTION,
+  resolveProjectServerContext,
+  summaryArgSchema,
+  summaryOutputSchema,
+  textPlusStructured,
+  textResult,
+} from './shared.ts';
+
+export const DESCRIPTION = [
+  '[Requires: Hocuspocus server] Move or rename a document, folder, or asset through the managed flow at `POST /api/rename-path`. Works for all three — the tool probes the content directory to decide. Inbound wiki-links plus supported inline Markdown links are rewritten across affected docs; renamed assets are reported.',
+  '',
+  '**Parameters:**',
+  '- `from` — Current path. Doc: docName (trailing `.md`/`.mdx` stripped). Folder: relative path, no leading/trailing slash. Asset: the file path incl. extension.',
+  '- `to` — New path. Same shape as `from`.',
+  '- `summary` — Optional one-line user-outcome (≤80 chars). If omitted, defaults to "Renamed X → Y". Avoid secrets or PII — persisted to git history.',
+  '',
+  '**Errors:** 400 — invalid path / excluded by `.gitignore`/`.okignore`; 404 — source does not exist; 409 — destination already exists (`colliding[]` returned).',
+].join('\n');
+
+interface RenameMapping {
+  fromDocName: string;
+  toDocName: string;
+}
+interface RenameRewrittenDoc {
+  docName: string;
+  rewrites: number;
+}
+interface RenamedAsset {
+  fromPath: string;
+  toPath: string;
+}
+
+export interface MoveDeps {
+  serverUrl: ServerUrlOrResolver;
+  config: ConfigOrResolver;
+  resolveCwd: (explicit?: string) => Promise<string>;
+  identityRef?: { current: AgentIdentity };
+}
+
+interface MoveArgs {
+  from: string;
+  to: string;
+  summary?: string;
+  cwd?: string;
+}
+
+function parseRenameMappings(value: unknown): RenameMapping[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const { fromDocName, toDocName } = entry as Record<string, unknown>;
+    return typeof fromDocName === 'string' && typeof toDocName === 'string'
+      ? [{ fromDocName, toDocName }]
+      : [];
+  });
+}
+
+function parseRewrittenDocs(value: unknown): RenameRewrittenDoc[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const { docName, rewrites } = entry as Record<string, unknown>;
+    return typeof docName === 'string' && typeof rewrites === 'number'
+      ? [{ docName, rewrites }]
+      : [];
+  });
+}
+
+function parseRenamedAssets(value: unknown): RenamedAsset[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const { fromPath, toPath } = entry as Record<string, unknown>;
+    return typeof fromPath === 'string' && typeof toPath === 'string' ? [{ fromPath, toPath }] : [];
+  });
+}
+
+function isValidFolderPath(path: string): boolean {
+  if (typeof path !== 'string' || path.length === 0) return false;
+  if (path.startsWith('/') || path.endsWith('/')) return false;
+  if (path.includes('..')) return false;
+  return true;
+}
+
+function pluralize(count: number, singular: string, plural = `${singular}s`): string {
+  return count === 1 ? singular : plural;
+}
+
+function resolveMoveKind(contentDir: string, from: string): 'file' | 'folder' | 'asset' | null {
+  const contained = resolveWithinRoot(contentDir, from);
+  if (!contained.ok) return null;
+  const absBase = contained.abs;
+  if (existsSync(absBase)) {
+    try {
+      const stat = statSync(absBase);
+      if (stat.isDirectory()) return 'folder';
+      if (stat.isFile()) {
+        return absBase.endsWith('.md') || absBase.endsWith('.mdx') ? 'file' : 'asset';
+      }
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code === 'EACCES' || code === 'EPERM') return 'file';
+    }
+  }
+  for (const ext of ['.md', '.mdx']) {
+    if (existsSync(`${absBase}${ext}`)) return 'file';
+  }
+  return null;
+}
+
+export function register(server: ServerInstance, deps: MoveDeps): void {
+  server.registerTool(
+    'move',
+    {
+      description: DESCRIPTION,
+      inputSchema: {
+        from: z.string().describe('Current path of a document, folder, or asset.'),
+        to: z
+          .string()
+          .describe('New path. All inbound wiki-links + inline links are rewritten automatically.'),
+        summary: summaryArgSchema.describe(
+          'Optional one-line user-outcome (≤80 chars). Defaults to "Renamed X → Y". Persisted to git history.',
+        ),
+        cwd: z.string().optional().describe(ROUTED_CWD_DESCRIPTION),
+      },
+      outputSchema: outputSchemaWithText({
+        ok: z.boolean().describe('Whether the move succeeded.'),
+        kind: z
+          .enum(['file', 'folder', 'asset'])
+          .optional()
+          .describe('What was moved, as auto-detected from `from`.'),
+        renamed: z
+          .array(z.object({ fromDocName: z.string(), toDocName: z.string() }))
+          .optional()
+          .describe('docName remappings performed.'),
+        rewrittenDocs: looseObjectArray
+          .optional()
+          .describe('Docs whose inbound links were rewritten.'),
+        renamedAssets: looseObjectArray
+          .optional()
+          .describe('Referenced assets that were moved alongside.'),
+        previewUrls: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe('Route-only preview URL per new docName.'),
+        previewUrlSource: previewUrlSourceField,
+        previousPreviewUrl: previousPreviewUrlField,
+        summary: summaryOutputSchema.optional(),
+        error: z.string().optional().describe('Present when `ok` is false.'),
+        colliding: looseObjectArray
+          .optional()
+          .describe('On a 409 collision: the conflicting from→to pairs.'),
+      }),
+    },
+    async (args: MoveArgs) => {
+      const context = await resolveProjectServerContext(
+        deps.resolveCwd,
+        deps.config,
+        deps.serverUrl,
+        args.cwd,
+      );
+      if (!context.ok) return textResult(`Error: ${context.error}`, true);
+      const { cwd, config, url } = context;
+      if (!url) return textResult(HOCUSPOCUS_NOT_RUNNING_ERROR, true);
+
+      const contentDir = join(cwd, config.content.dir);
+      const kind = resolveMoveKind(contentDir, args.from);
+      if (kind === null) {
+        return textResult(
+          `Error: \`${args.from}\` does not exist as a doc, folder, or asset under the content directory.`,
+          true,
+        );
+      }
+
+      let fromPath = args.from;
+      let toPath = args.to;
+      if (kind === 'file') {
+        const nf = normalizeDocName(args.from);
+        if (!nf.ok) return textResult(nf.error, true);
+        const nt = normalizeDocName(args.to);
+        if (!nt.ok) return textResult(nt.error, true);
+        fromPath = nf.docName;
+        toPath = nt.docName;
+      } else if (kind === 'folder') {
+        if (!isValidFolderPath(args.from) || !isValidFolderPath(args.to)) {
+          return textResult(
+            'Error: folder `from`/`to` must be relative paths with no leading/trailing slash.',
+            true,
+          );
+        }
+      }
+
+      const result = await httpPost(url, '/api/rename-path', {
+        kind,
+        fromPath,
+        toPath,
+        ...(args.summary !== undefined ? { summary: args.summary } : {}),
+        ...agentIdentityFields(deps.identityRef?.current),
+      });
+      if (!result.ok) {
+        const error = result.error as string;
+        const colliding = parseRenameCollidingPairs(result.colliding);
+        const structured: { ok: false; error: string; colliding?: RenameCollisionPair[] } = {
+          ok: false,
+          error,
+          ...(colliding.length > 0 ? { colliding } : {}),
+        };
+        return textPlusStructured(`Error: ${error}`, structured, true);
+      }
+
+      const renamed = parseRenameMappings(result.renamed);
+      const rewrittenDocs = parseRewrittenDocs(result.rewrittenDocs);
+      const renamedAssets = parseRenamedAssets(result.renamedAssets);
+
+      const previewDeps = { config: deps.config, resolveCwd: deps.resolveCwd };
+      const previewUrls: Record<string, string> = {};
+      let previewUrlSource: PreviewUrlSource | undefined;
+      let previousPreviewUrl: string | undefined;
+      if (kind === 'file') {
+        const newPreview = await resolvePreviewUrlForTool(toPath, previewDeps, cwd);
+        const oldPreview = await resolvePreviewUrlForTool(fromPath, previewDeps, cwd);
+        if (newPreview) {
+          previewUrls[toPath] = newPreview.url;
+          previewUrlSource = newPreview.source;
+        }
+        if (oldPreview) previousPreviewUrl = oldPreview.url;
+      } else if (kind === 'folder') {
+        for (const { toDocName } of renamed) {
+          const preview = await resolvePreviewUrlForTool(toDocName, previewDeps, cwd);
+          if (preview) {
+            previewUrls[toDocName] = preview.url;
+            previewUrlSource ??= preview.source;
+          }
+        }
+      }
+
+      const summaryResult =
+        result.summary && typeof result.summary === 'object'
+          ? (result.summary as { value: string; truncatedFrom?: number; hint?: string })
+          : undefined;
+      const summaryHint = typeof summaryResult?.hint === 'string' ? summaryResult.hint : undefined;
+
+      const textLines: string[] = [];
+      if (kind === 'asset') {
+        textLines.push(`Moved asset ${fromPath} → ${toPath}.`);
+      } else if (kind === 'folder') {
+        textLines.push(
+          renamed.length === 0
+            ? `No managed docs under ${args.from}/ — nothing to rename. Empty folders are not tracked.`
+            : `Renamed folder ${args.from}/ → ${args.to}/ (${renamed.length} doc${renamed.length === 1 ? '' : 's'}, ${rewrittenDocs.length} rewrite${rewrittenDocs.length === 1 ? '' : 's'}).`,
+        );
+      } else {
+        const renamedSummary =
+          renamed
+            .map(({ fromDocName, toDocName }) => `${fromDocName} -> ${toDocName}`)
+            .join(', ') || `${fromPath} -> ${toPath}`;
+        const rewrittenSummary =
+          rewrittenDocs.length === 0
+            ? 'No inbound links required updates.'
+            : `Rewrote ${rewrittenDocs.length} ${pluralize(rewrittenDocs.length, 'document')}.`;
+        textLines.push(`Renamed ${renamedSummary}. ${rewrittenSummary}`);
+      }
+      if (renamedAssets.length > 0) {
+        textLines.push(
+          `Moved ${renamedAssets.length} referenced ${pluralize(renamedAssets.length, 'asset')}.`,
+        );
+      }
+      if (summaryHint) textLines.push(summaryHint);
+
+      return textPlusStructured(textLines.join('\n'), {
+        ok: true,
+        kind,
+        renamed,
+        rewrittenDocs,
+        ...(renamedAssets.length > 0 ? { renamedAssets } : {}),
+        ...(Object.keys(previewUrls).length > 0 ? { previewUrls } : {}),
+        ...(previewUrlSource ? { previewUrlSource } : {}),
+        ...(previousPreviewUrl ? { previousPreviewUrl } : {}),
+        ...(summaryResult ? { summary: summaryResult } : {}),
+      });
+    },
+  );
+}

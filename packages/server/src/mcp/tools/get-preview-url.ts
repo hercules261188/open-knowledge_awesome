@@ -22,12 +22,12 @@ export const DESCRIPTION = [
   '',
   'Use this when YOUR host opens the URL itself: navigate your in-app browser to the returned `url`, or — only on a stdio host with no browser tool — `open` it in the system browser. Hosts with a preview pane (Claude Code Desktop) call `preview_start("open-knowledge-ui")` instead; the Claude Code CLI uses `ok open <doc>` to open in the OK Desktop app.',
   '',
-  'Returns `{ url, baseUrl, running: false }` and a recovery hint when no UI is running for the project (start one with `ok ui`).',
+  'Returns `{ url: null, baseUrl: null, running: false, autoOpen }` and a recovery hint when no UI is running for the project (start one with `ok ui`).',
   '',
   '**Parameters:**',
-  '- `docName` (optional) — Extension-less doc path (e.g. `specs/foo/SPEC`). Omit for the UI root URL.',
-  '- `folder` (optional) — Folder path (e.g. `specs/foo`); returns the `…/#/<folder>/` route. Mutually exclusive with `docName`.',
-  '- `armPaneTarget` (optional) — When true with a `docName`/`folder`, writes a small TTL-bounded (~30s) state file under `.ok/local/` so a later Claude-pane base-open lands on that target. This is the tool’s ONLY side effect; omit it and the call is read-only.',
+  '- `document` (optional) — Extension-less doc path (e.g. `specs/foo/SPEC`). Omit for the UI root URL.',
+  '- `folder` (optional) — Folder path (e.g. `specs/foo`); returns the `…/#/<folder>/` route. Mutually exclusive with `document`.',
+  '- `armPaneTarget` (optional) — When true with a `document`/`folder`, writes a small TTL-bounded (~30s) state file under `.ok/local/` so a later Claude-pane base-open lands on that target. This is the tool’s ONLY side effect; omit it and the call is read-only.',
   '- `cwd` (optional) — Project root (see `cwd` description below).',
 ].join('\n');
 
@@ -37,7 +37,7 @@ interface GetPreviewUrlDeps {
 }
 
 const InputSchema = {
-  docName: z
+  document: z
     .string()
     .optional()
     .describe(
@@ -48,13 +48,13 @@ const InputSchema = {
     .min(1)
     .optional()
     .describe(
-      'Folder path to resolve a folder-route preview URL for (e.g. "specs/foo"); returns the `…/#/<folder>/` route. Mutually exclusive with `docName`.',
+      'Folder path to resolve a folder-route preview URL for (e.g. "specs/foo"); returns the `…/#/<folder>/` route. Mutually exclusive with `document`.',
     ),
   armPaneTarget: z
     .boolean()
     .optional()
     .describe(
-      'When true with a `docName` or `folder`, arm that target so a subsequent Claude-pane base-open (`preview_start`) lands there instead of the presence-driven default. TTL-bounded (~30s) so a stale arm cannot hijack a later open.',
+      'When true with a `document` or `folder`, arm that target so a subsequent Claude-pane base-open (`preview_start`) lands there instead of the presence-driven default. TTL-bounded (~30s) so a stale arm cannot hijack a later open.',
     ),
   cwd: z.string().optional().describe(ROUTED_CWD_DESCRIPTION),
 } as const;
@@ -64,7 +64,7 @@ const OutputSchema = outputSchemaWithText({
     .string()
     .nullable()
     .describe(
-      'Browser-reachable URL — the UI base joined with the doc route when `docName` is given, else the UI root. `null` when no UI is running.',
+      'Browser-reachable URL — the UI base joined with the doc route when `document` is given, else the UI root. `null` when no UI is running.',
     ),
   baseUrl: z
     .string()
@@ -85,7 +85,7 @@ const NO_UI_MESSAGE =
 
 export function register(server: ServerInstance, deps: GetPreviewUrlDeps): void {
   server.registerTool(
-    'get_preview_url',
+    'preview_url',
     {
       description: DESCRIPTION,
       inputSchema: InputSchema,
@@ -95,14 +95,14 @@ export function register(server: ServerInstance, deps: GetPreviewUrlDeps): void 
         idempotentHint: true,
       },
     },
-    async (args: { docName?: string; folder?: string; armPaneTarget?: boolean; cwd?: string }) => {
-      if (args.docName && args.folder) {
+    async (args: { document?: string; folder?: string; armPaneTarget?: boolean; cwd?: string }) => {
+      if (args.document && args.folder) {
         return {
           isError: true,
           content: [
             {
               type: 'text' as const,
-              text: 'Error: docName and folder are mutually exclusive — pass exactly one.',
+              text: 'Error: document and folder are mutually exclusive — pass exactly one.',
             },
           ],
         };
@@ -119,8 +119,8 @@ export function register(server: ServerInstance, deps: GetPreviewUrlDeps): void 
       const { baseUrl } = resolveUiInfo(ctx);
       const autoOpen = context.config.appearance.preview.autoOpen;
 
-      const routeFragment = args.docName
-        ? `#/${encodeDocName(args.docName)}`
+      const routeFragment = args.document
+        ? `#/${encodeDocName(args.document)}`
         : args.folder
           ? `#/${encodeFolderRoute(args.folder)}`
           : null;
@@ -133,7 +133,7 @@ export function register(server: ServerInstance, deps: GetPreviewUrlDeps): void 
 
       const armNote =
         args.armPaneTarget && !routeFragment
-          ? ' (note: armPaneTarget was set but no docName/folder was given, so nothing was armed)'
+          ? ' (note: armPaneTarget was set but no document/folder was given, so nothing was armed)'
           : '';
 
       if (baseUrl === null) {

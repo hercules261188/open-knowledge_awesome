@@ -6,11 +6,9 @@ import { normalizeObjectSchema } from '@modelcontextprotocol/sdk/server/zod-comp
 import { toJsonSchemaCompat } from '@modelcontextprotocol/sdk/server/zod-json-schema-compat.js';
 import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv.js';
 import { type Config, ConfigSchema } from '../../config/schema.ts';
-import { register as registerDiscover } from './discover.ts';
-import { register as registerFolderConfig } from './folder-config.ts';
-import { register as registerGetComponents } from './get-components.ts';
-import { register as registerGetConfig } from './get-config.ts';
+import { register as registerConfig } from './config.ts';
 import { registerAllTools } from './index.ts';
+import { register as registerPalette } from './palette.ts';
 import { register as registerSearch } from './search.ts';
 import type { ServerInstance } from './shared.ts';
 
@@ -66,76 +64,6 @@ function compileOutputSchemaForClient(rawShape: unknown): Record<string, unknown
   }) as Record<string, unknown>;
 }
 
-function validateStrict(
-  jsonSchema: Record<string, unknown>,
-  data: unknown,
-): {
-  valid: boolean;
-  error?: string;
-} {
-  const validator = new AjvJsonSchemaValidator();
-  const fn = validator.getValidator(jsonSchema);
-  const result = fn(data);
-  if (result.valid) return { valid: true };
-  return { valid: false, error: result.errorMessage };
-}
-
-describe('MCP outputSchema strictness — structuredContent must validate (PRD-6655 + PRD-6656)', () => {
-  test('discover: structuredContent validates against compiled outputSchema (PRD-6656)', async () => {
-    const cwd = newProject();
-    const captured = captureRegistration(registerDiscover, {
-      config: BASE_CONFIG,
-      resolveCwd: async () => cwd,
-    });
-    const result = await captured.handler({});
-    expect(result.isError).toBeFalsy();
-    expect(result.structuredContent).toBeDefined();
-
-    const jsonSchema = compileOutputSchemaForClient(captured.cfg.outputSchema);
-    const validation = validateStrict(jsonSchema, result.structuredContent);
-    expect(validation.error).toBeUndefined();
-    expect(validation.valid).toBe(true);
-  });
-
-  test('folder_config (action=set-rule, success path): structuredContent validates against compiled outputSchema (PRD-6655)', async () => {
-    const cwd = newProject();
-    const captured = captureRegistration(registerFolderConfig, {
-      config: BASE_CONFIG,
-      resolveCwd: async () => cwd,
-    });
-    const result = await captured.handler({
-      action: 'set-rule',
-      rules: [{ match: 'projects/**', frontmatter: { tags: ['project'] } }],
-    });
-    expect(result.isError).toBeFalsy();
-    expect(result.structuredContent).toBeDefined();
-
-    const jsonSchema = compileOutputSchemaForClient(captured.cfg.outputSchema);
-    const validation = validateStrict(jsonSchema, result.structuredContent);
-    expect(validation.error).toBeUndefined();
-    expect(validation.valid).toBe(true);
-  });
-
-  test('folder_config (action=set-rule, error path): error structuredContent ALSO validates', async () => {
-    const cwd = newProject();
-    const captured = captureRegistration(registerFolderConfig, {
-      config: BASE_CONFIG,
-      resolveCwd: async () => cwd,
-    });
-    const result = await captured.handler({
-      action: 'set-rule',
-      rules: [{ match: 'specs/*/evidence/**', frontmatter: {} }],
-    });
-    expect(result.isError).toBe(true);
-    expect(result.structuredContent).toBeDefined();
-
-    const jsonSchema = compileOutputSchemaForClient(captured.cfg.outputSchema);
-    const validation = validateStrict(jsonSchema, result.structuredContent);
-    expect(validation.error).toBeUndefined();
-    expect(validation.valid).toBe(true);
-  });
-});
-
 describe('MCP outputSchema strictness — every registerTool+textPlusStructured tool must admit `text`', () => {
   function compileFromRegistration<TDeps>(
     register: (server: ServerInstance, deps: TDeps) => void,
@@ -154,15 +82,10 @@ describe('MCP outputSchema strictness — every registerTool+textPlusStructured 
   };
 
   const cases: Array<{ name: string; build: () => Record<string, unknown> }> = [
-    { name: 'discover', build: () => compileFromRegistration(registerDiscover, deps) },
+    { name: 'config', build: () => compileFromRegistration(registerConfig, deps) },
     {
-      name: 'folder_config',
-      build: () => compileFromRegistration(registerFolderConfig, deps),
-    },
-    { name: 'get_config', build: () => compileFromRegistration(registerGetConfig, deps) },
-    {
-      name: 'get_components',
-      build: () => compileFromRegistration(registerGetComponents, deps),
+      name: 'palette',
+      build: () => compileFromRegistration(registerPalette, deps),
     },
     { name: 'search', build: () => compileFromRegistration(registerSearch, depsWithServer) },
   ];
@@ -204,17 +127,23 @@ describe('MCP outputSchema strictness — auto-discovered registerTool sweep (no
   }
 
   const KNOWN_REGISTER_TOOL_NAMES = new Set([
-    'discover',
-    'folder_config',
-    'get_authoring_palette',
-    'get_components',
-    'get_config',
-    'get_conflict_content',
-    'get_preview_url',
-    'list_conflicts',
+    'palette',
+    'config',
+    'preview_url',
     'resolve_conflict',
     'search',
     'share_link',
+    'history',
+    'checkpoint',
+    'restore_version',
+    'delete',
+    'move',
+    'conflicts',
+    'workflow',
+    'exec',
+    'edit',
+    'write',
+    'links',
   ]);
 
   test('every registerTool registration declares `text` in its outputSchema', () => {

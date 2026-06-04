@@ -122,8 +122,6 @@ export {
   DEFAULT_LOGS_MAX_BYTES,
   DEFAULT_SPANS_MAX_BYTES,
   DEFAULT_TELEMETRY_ATTRIBUTE_DENYLIST,
-  type FolderRule,
-  FolderRuleSchema,
 } from './config/schema.ts';
 export { getLeafFieldMeta, resolveLeafSchema } from './config/schema-leaf.ts';
 export { CONFIG_SCHEMA_MAJOR, CONFIG_SCHEMA_MAJOR_PATH } from './config/schema-version.ts';
@@ -628,12 +626,8 @@ export {
   RenamePathRequestSchema,
   type RenamePathSuccess,
   RenamePathSuccessSchema,
-  type RenameRequest,
-  RenameRequestSchema,
   type RenameRewrittenDoc,
   RenameRewrittenDocSchema,
-  type RenameSuccess,
-  RenameSuccessSchema,
   type RescueEntryFlat,
   RescueEntryFlatSchema,
   type RescueEntryTimeline,

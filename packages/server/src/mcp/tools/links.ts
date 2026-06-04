@@ -5,7 +5,9 @@ import type { ConfigOrResolver, ServerInstance, ServerUrlOrResolver } from './sh
 import {
   HOCUSPOCUS_NOT_RUNNING_ERROR,
   httpGet,
+  looseObjectArray,
   normalizeDocName,
+  outputSchemaWithText,
   ROUTED_CWD_DESCRIPTION,
   resolveProjectServerContext,
   textPlusStructured,
@@ -18,8 +20,8 @@ type LinkKind = (typeof LINK_KINDS)[number];
 export const DESCRIPTION = [
   '[Requires: Hocuspocus server] Read the wiki-link graph. `kind` takes one value, or an array for a one-call audit — results merge into a single payload; any per-kind failure lands in an `errors` map.',
   '',
-  '- `backlinks` / `forward` / `suggest` — operate on one page; require `docName`. `suggest` finds prose mentions of the page not yet wrapped in link syntax (each mention `offset` works with `edit_document`).',
-  '- `dead` — missing internal link targets corpus-wide; optional `sourceDocNames` filter (OR semantics).',
+  '- `backlinks` / `forward` / `suggest` — operate on one page; require `document`. `suggest` finds prose mentions of the page not yet wrapped in link syntax. Each mention returns an `excerpt` (a normalized, `…`-trimmed snippet for context — NOT an edit-ready literal) plus an `offset`. To wrap one: re-read the doc (`exec("cat …")`), find the real mention text, and `edit` it into a `[[wiki-link]]`.',
+  '- `dead` — missing internal link targets corpus-wide; optional `sourceDocuments` filter (OR semantics).',
   '- `orphans` — disconnected pages; optional `mode`: `incoming` | `outgoing` | `both`.',
   '- `hubs` — most-linked pages; optional `limit` (default 20).',
 ].join('\n');
@@ -58,8 +60,8 @@ export interface LinksDeps extends PreviewUrlDeps {
 
 interface LinksArgs {
   kind: LinkKind | LinkKind[];
-  docName?: string;
-  sourceDocNames?: string[];
+  document?: string;
+  sourceDocuments?: string[];
   mode?: OrphanMode;
   limit?: number;
   cwd?: string;
@@ -80,11 +82,13 @@ export function register(server: ServerInstance, deps: LinksDeps): void {
           .describe(
             'Link-graph view(s) to return — one kind, or an array to fetch several in one call (e.g. ["dead","orphans","hubs"] for a graph audit).',
           ),
-        docName: z
+        document: z
           .string()
           .optional()
-          .describe('Target page docName. Required for kind=backlinks|forward|suggest.'),
-        sourceDocNames: z
+          .describe(
+            'Target page (path, extension-less). Required for kind=backlinks|forward|suggest.',
+          ),
+        sourceDocuments: z
           .array(z.string())
           .optional()
           .describe(
@@ -98,10 +102,35 @@ export function register(server: ServerInstance, deps: LinksDeps): void {
           .number()
           .int()
           .positive()
+          .max(100)
           .optional()
-          .describe('Maximum number of hubs to return. Used by kind=hubs.'),
+          .describe('Maximum number of hubs to return (default 20, max 100). Used by kind=hubs.'),
         cwd: z.string().optional().describe(ROUTED_CWD_DESCRIPTION),
       },
+      outputSchema: outputSchemaWithText({
+        backlinks: looseObjectArray
+          .optional()
+          .describe('kind=backlinks: pages that link TO the target.'),
+        forwardLinks: looseObjectArray
+          .optional()
+          .describe('kind=forward: links FROM the target (doc + external).'),
+        deadLinks: looseObjectArray
+          .optional()
+          .describe('kind=dead: internal links whose target does not exist.'),
+        orphans: looseObjectArray.optional().describe('kind=orphans: disconnected pages.'),
+        hubs: looseObjectArray.optional().describe('kind=hubs: the most-linked pages.'),
+        suggest: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe(
+            'kind=suggest: `{ mentions: [{ source, excerpt, offset }], previewUrl }` — `excerpt` is a `…`-trimmed context snippet (re-read the doc for the real text before `edit`).',
+          ),
+        errors: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe('Per-kind failures on a multi-kind call: `{ kind: message }`.'),
+        cwd: z.string().describe('Absolute directory the read ran against.'),
+      }),
     },
     async (args: LinksArgs) => {
       const context = await resolveProjectServerContext(
@@ -176,8 +205,8 @@ async function runBacklinks(
   url: string,
   resolve: ListResolve,
 ): Promise<KindOutcome> {
-  if (!args.docName) return { ok: false, error: 'kind=backlinks requires `docName`.' };
-  const normalized = normalizeDocName(args.docName);
+  if (!args.document) return { ok: false, error: 'kind=backlinks requires `document`.' };
+  const normalized = normalizeDocName(args.document);
   if (!normalized.ok) return { ok: false, error: normalized.error };
   const result = await httpGet(
     url,
@@ -203,8 +232,8 @@ async function runForwardLinks(
   url: string,
   resolve: ListResolve,
 ): Promise<KindOutcome> {
-  if (!args.docName) return { ok: false, error: 'kind=forward requires `docName`.' };
-  const normalized = normalizeDocName(args.docName);
+  if (!args.document) return { ok: false, error: 'kind=forward requires `document`.' };
+  const normalized = normalizeDocName(args.document);
   if (!normalized.ok) return { ok: false, error: normalized.error };
   const result = await httpGet(
     url,
@@ -231,7 +260,7 @@ async function runDeadLinks(
   resolve: ListResolve,
 ): Promise<KindOutcome> {
   const params = new URLSearchParams();
-  for (const sourceDocName of args.sourceDocNames ?? []) {
+  for (const sourceDocName of args.sourceDocuments ?? []) {
     const normalized = normalizeDocName(sourceDocName);
     if (!normalized.ok) return { ok: false, error: normalized.error };
     params.append('sourceDocName', normalized.docName);
@@ -309,8 +338,8 @@ async function runSuggest(
   cwd: string,
   deps: LinksDeps,
 ): Promise<KindOutcome> {
-  if (!args.docName) return { ok: false, error: 'kind=suggest requires `docName`.' };
-  const normalized = normalizeDocName(args.docName);
+  if (!args.document) return { ok: false, error: 'kind=suggest requires `document`.' };
+  const normalized = normalizeDocName(args.document);
   if (!normalized.ok) return { ok: false, error: normalized.error };
   const result = await httpGet(
     url,

@@ -11,27 +11,21 @@ const BASE_CONFIG: Config = ConfigSchema.parse({});
 const EXPECTED_TOOLS = [
   'exec',
   'search',
-  'get_history',
+  'history',
   'links',
-  'get_config',
-  'get_components',
-  'get_authoring_palette',
-  'get_preview_url',
+  'config',
+  'palette',
+  'preview_url',
   'share_link',
-  'write_document',
-  'edit_document',
-  'edit_frontmatter',
-  'delete_document',
-  'rename',
-  'version',
-  'folder_config',
-  'list_conflicts',
-  'get_conflict_content',
+  'write',
+  'edit',
+  'delete',
+  'move',
+  'checkpoint',
+  'restore_version',
+  'conflicts',
   'resolve_conflict',
-  'ingest',
-  'research',
-  'consolidate',
-  'discover',
+  'workflow',
 ] as const;
 
 const RETIRED_TOOL_NAMES = [
@@ -45,13 +39,29 @@ const RETIRED_TOOL_NAMES = [
   'rename_folder',
   'save_version',
   'rollback_to_version',
+  'version',
   'set_folder_rule',
   'write_template',
   'delete_template',
   'frontmatter_patch',
+  'write_document',
+  'edit_document',
+  'edit_frontmatter',
+  'delete_document',
+  'rename',
+  'folder_config',
   'read_document',
   'grep',
   'list_documents',
+  'get_components',
+  'get_authoring_palette',
+  'ingest',
+  'research',
+  'consolidate',
+  'discover',
+  'get_history',
+  'get_config',
+  'get_preview_url',
 ] as const;
 
 function captureRegistered(): string[] {
@@ -73,13 +83,13 @@ function captureRegistered(): string[] {
   return names;
 }
 
-describe('registerAllTools — 23-tool surface (SPEC.md §9.1 / AC8)', () => {
-  test('registers exactly 23 tools', () => {
+describe('registerAllTools — 17-tool surface (SPEC.md §9.1 / AC8)', () => {
+  test('registers exactly 17 tools', () => {
     const names = captureRegistered();
-    expect(names.length).toBe(23);
+    expect(names.length).toBe(17);
   });
 
-  test('the 23 expected tool names are all present', () => {
+  test('the 17 expected tool names are all present', () => {
     const names = new Set(captureRegistered());
     for (const expected of EXPECTED_TOOLS) {
       expect(names).toContain(expected);

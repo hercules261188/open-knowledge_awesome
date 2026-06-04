@@ -2,7 +2,7 @@ import { t } from '@lingui/core/macro';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { ArrowDown, ArrowUp, ArrowUpDown, File, Folder, FolderOpen, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { FolderDefaultsCard } from '@/components/FolderDefaultsCard';
+import { FolderPropertiesCard } from '@/components/FolderPropertiesCard';
 import {
   buildFolderOverviewData,
   type FolderOverviewEntry,
@@ -175,7 +175,7 @@ export function FolderOverview({ folderPath }: { folderPath: string }) {
               </Button>
             </div>
           </div>
-          <FolderDefaultsCard
+          <FolderPropertiesCard
             folderPath={folderPath}
             state={folderConfig}
             onChange={refreshFolderConfig}

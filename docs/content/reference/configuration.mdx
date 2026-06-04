@@ -40,7 +40,7 @@ The **Scope** column says which file a setting belongs in: **project** → `.ok/
 
 ## Folder properties
 
-A folder's own metadata lives in that folder's `.ok/` directory, not in `config.yml`: its own open-shape frontmatter (any keys; `title` / `description` / `tags` are the conventional ones) in `.ok/frontmatter.yml`, and its templates in `.ok/templates/`. Folder properties describe only their own folder: they are not inherited by the docs inside it. (Templates do resolve leaf-to-root, so a root template is available in every subfolder.) Set them from the editor's **Folder properties** pane, or via the `folder_config` MCP tool. See [Folders and templates](/docs/advanced/folders-and-templates#folder-properties) for the full walkthrough.
+A folder's own metadata lives in that folder's `.ok/` directory, not in `config.yml`: its own open-shape frontmatter (any keys; `title` / `description` / `tags` are the conventional ones) in `.ok/frontmatter.yml`, and its templates in `.ok/templates/`. Folder properties describe only their own folder: they are not inherited by the docs inside it. (Templates do resolve leaf-to-root, so a root template is available in every subfolder.) Set them from the editor's **Folder properties** pane, or via the `edit({ folder })` / `write({ folder })` MCP tools. See [Folders and templates](/docs/advanced/folders-and-templates#folder-properties) for the full walkthrough.
 
 ## Ignore patterns
 

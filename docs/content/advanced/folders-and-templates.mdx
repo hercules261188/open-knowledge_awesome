@@ -116,7 +116,7 @@ Folder *properties* do not behave this way: they describe only their own folder 
 Agents create documents from templates the same way you do. Through MCP, an agent calls:
 
 ```text
-write_document({ docName: "posts/launch", template: "blog-post" })
+write({ document: { path: "posts/launch", template: "blog-post" } })
 ```
 
 Open Knowledge finds the `blog-post` template the same way the New File dialog does: the agent gets the one that applies to `posts/`. The template's **starter content** becomes the new document; the template's own name and description stay behind as template info and are not copied into the document.
@@ -130,10 +130,10 @@ You never have to edit these files by hand (the folder overview page is the fron
 - A folder's own properties live in `<folder>/.ok/frontmatter.yml` (open-shape: any keys; `title` / `description` / `tags` are the conventional ones).
 - Templates live in `<folder>/.ok/templates/<name>.md`.
 
-A folder only gets a `.ok/` directory once you give it a description or its first template; folders with nothing special stay plain. See the [Configuration reference](/docs/reference/configuration#folder-properties) for the file formats, and the [MCP reference](/docs/reference/mcp) for the `folder_config` and `write_document` tools that set the same things from an AI agent.
+A folder only gets a `.ok/` directory once you give it a description or its first template; folders with nothing special stay plain. See the [Configuration reference](/docs/reference/configuration#folder-properties) for the file formats, and the [MCP reference](/docs/reference/mcp) for the `write` and `edit` tools (with `folder` and `template` targets) that set the same things from an AI agent.
 
 ## See also
 
 - [Editor](/docs/features/editor): the Properties panel and the file sidebar.
 - [Configuration](/docs/reference/configuration): the `.ok/` file formats behind these settings.
-- [MCP reference](/docs/reference/mcp): the `write_document` tool and templates.
+- [MCP reference](/docs/reference/mcp): the `write` tool and templates.

@@ -23,7 +23,12 @@ import {
 import { resolveWithinRoot } from './path-safety.ts';
 import { buildListResolver, docNameFromPath, type PreviewUrlSource } from './preview-url.ts';
 import type { ConfigOrResolver, ServerInstance, ServerUrlOrResolver } from './shared.ts';
-import { resolveProjectServerContext, textPlusStructured } from './shared.ts';
+import {
+  looseObjectArray,
+  outputSchemaWithText,
+  resolveProjectServerContext,
+  textPlusStructured,
+} from './shared.ts';
 
 const SOFT_CAP_LINES = 500;
 const SOFT_CAP_BYTES = 50 * 1024;
@@ -35,7 +40,7 @@ export const DESCRIPTION = [
   '',
   'Run a read-only bash-like command against the project content directory. Returns raw stdout plus enriched metadata for every wiki file referenced (frontmatter, backlink/forward-link counts, shadow-repo activity with agent/human attribution).',
   '',
-  'Allowlist: cat, ls, grep, find, head, tail, wc, sort, uniq, cut. Pipes (|) work between stages. Redirections, subshells, and writes are rejected.',
+  'Allowlist: cat, ls, grep, find, head, tail, wc, sort, uniq, cut. One command or a pipe (|) per call — NOT a shell: `&&`, `;`, redirections, subshells, and writes are rejected. To do several things, make separate exec calls or pass multiple paths to one command (e.g. `ls -A a b c`, `cat a b c`).',
   '',
   "cwd: the command runs in the explicit absolute `cwd` you pass, or in the MCP client's only advertised root when there is exactly one. If the client has zero or multiple roots, pass `cwd` explicitly. Paths inside the command resolve relative to that cwd; traversal above it is rejected.",
   '',
@@ -481,6 +486,28 @@ export function register(server: ServerInstance, deps: ExecDeps): void {
             'Absolute host path to run the command from. Defaults only when the MCP client advertises exactly one root; otherwise pass `cwd` explicitly.',
           ),
       },
+      outputSchema: outputSchemaWithText({
+        enrichedPaths: looseObjectArray.describe(
+          'Per-referenced-file metadata: frontmatter, backlink/forward-link counts, recent shadow-repo activity, and a route-only previewUrl.',
+        ),
+        stdout: z
+          .string()
+          .optional()
+          .describe('Raw command stdout (soft-cap truncated), without banners or enrichment.'),
+        stdoutTruncated: z
+          .boolean()
+          .optional()
+          .describe('True when stdout was truncated by the soft cap.'),
+        warnings: z
+          .array(z.string())
+          .optional()
+          .describe('Tool-level warnings — head/tail truncation, binary detection, stderr.'),
+        cwd: z.string().optional().describe('Absolute directory the command ran in.'),
+        error: z
+          .object({ category: z.string(), message: z.string() })
+          .optional()
+          .describe('Present on failure — the error category + message.'),
+      }),
     },
     async (args: { command: string; cwd?: string }) => {
       try {

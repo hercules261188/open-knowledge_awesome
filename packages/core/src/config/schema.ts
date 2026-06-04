@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { FrontmatterPatchSchema } from '../frontmatter/schema.ts';
 import { fieldRegistry } from './field-registry.ts';
 
 export const DEFAULT_TELEMETRY_ATTRIBUTE_DENYLIST: readonly string[] = Object.freeze([
@@ -15,15 +14,6 @@ export const DEFAULT_TELEMETRY_ATTRIBUTE_DENYLIST: readonly string[] = Object.fr
 
 export const DEFAULT_SPANS_MAX_BYTES = 52_428_800;
 export const DEFAULT_LOGS_MAX_BYTES = 26_214_400;
-
-export const FolderRuleSchema = z.looseObject({
-  match: z
-    .string()
-    .min(1, "`match` must be a non-empty glob pattern (e.g. 'specs/**' or 'reports/*/**')"),
-  frontmatter: FrontmatterPatchSchema,
-});
-
-export type FolderRule = z.infer<typeof FolderRuleSchema>;
 
 export const ConfigSchema = z.looseObject({
   content: z

@@ -40,4 +40,4 @@ guides/       how-to / onboarding / runbooks (referenced throughout)
 
 ## Templates
 
-Create docs with `write_document({ template: "<name>", … })`. Templates carry only structure (headings + frontmatter scaffold); what each section is for is described above, not repeated in the document body.
+Create docs with `write({ document: { path, template: "<name>" } })`. Templates carry only structure (headings + frontmatter scaffold); what each section is for is described above, not repeated in the document body.

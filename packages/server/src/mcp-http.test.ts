@@ -210,7 +210,7 @@ test('mcp-tool-path-traversal: explicit cwd outside configured project root is r
   expect(text).toMatch(/not within the configured project root|escapes the configured root/);
 });
 
-test('PRD-6659: tools/call write_document with an invalid position returns field name + allowed values', async () => {
+test('PRD-6659: tools/call write with an invalid position returns field name + allowed values', async () => {
   const config: Config = ConfigSchema.parse({});
   const harness = await bootHandler(config);
   openHarnesses.push(harness);
@@ -230,8 +230,8 @@ test('PRD-6659: tools/call write_document with an invalid position returns field
       id: 42,
       method: 'tools/call',
       params: {
-        name: 'write_document',
-        arguments: { docName: 'foo', markdown: 'hello', position: 'middle' },
+        name: 'write',
+        arguments: { document: { path: 'foo', content: 'hello', position: 'middle' } },
       },
     }),
   });
@@ -353,11 +353,13 @@ test('forwarded connectionId header reaches /api/agent-write-md as agentId', asy
         id: 2,
         method: 'tools/call',
         params: {
-          name: 'write_document',
+          name: 'write',
           arguments: {
-            docName: 'forwarded-id-probe',
-            markdown: 'hello\n',
-            position: 'replace',
+            document: {
+              path: 'forwarded-id-probe',
+              content: 'hello\n',
+              position: 'replace',
+            },
           },
         },
       }),
@@ -476,11 +478,13 @@ test('invalid connectionId header is ignored — session falls back to a fresh U
         id: 2,
         method: 'tools/call',
         params: {
-          name: 'write_document',
+          name: 'write',
           arguments: {
-            docName: 'bad-cid-probe',
-            markdown: 'hello\n',
-            position: 'replace',
+            document: {
+              path: 'bad-cid-probe',
+              content: 'hello\n',
+              position: 'replace',
+            },
           },
         },
       }),

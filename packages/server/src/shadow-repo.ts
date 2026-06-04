@@ -892,6 +892,7 @@ export async function saveVersion(
   contentRoot: string,
   writers: WriterIdentity[],
   branch = 'main',
+  summary?: string,
 ): Promise<SaveVersionResult> {
   return withSpan(
     'shadow.saveVersion',
@@ -901,7 +902,7 @@ export async function saveVersion(
         'shadow.writer_count': writers.length,
       },
     },
-    async () => saveVersionInner(shadow, contentRoot, writers, branch),
+    async () => saveVersionInner(shadow, contentRoot, writers, branch, summary),
   );
 }
 
@@ -910,6 +911,7 @@ async function saveVersionInner(
   contentRoot: string,
   writers: WriterIdentity[],
   branch = 'main',
+  summary?: string,
 ): Promise<SaveVersionResult> {
   const sg = shadowGit(shadow);
   const gitPathspec = contentRoot || '.';
@@ -966,7 +968,8 @@ async function saveVersionInner(
       color_seed: SERVICE_WRITER.id,
       docs: [],
     };
-    const checkpointMessage = `${formatCheckpointSubject('Checkpoint version')}\n\n${formatOkActor(checkpointActorEntry)}`;
+    const checkpointSubject = summary?.trim() ? summary.trim() : 'Checkpoint version';
+    const checkpointMessage = `${formatCheckpointSubject(checkpointSubject)}\n\n${formatOkActor(checkpointActorEntry)}`;
     const checkpointArgs = ['commit-tree', shadowTreeSha, '-m', checkpointMessage];
     for (const p of uniqueParents) {
       checkpointArgs.push('-p', p);

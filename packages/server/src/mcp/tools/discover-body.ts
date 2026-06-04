@@ -9,7 +9,7 @@ Use OK primitives only — no new files outside \`<folder>/.ok/\`, no body rewri
 
 **You will work through 7 phases in order. STOP gates (⛔) require user confirmation before proceeding. Do not skip or batch ahead.**
 
-**Server requirement.** Phases 1-4 run fs-direct — \`exec\` (scan + read) and \`folder_config\` (folder frontmatter + templates) need no running server. Phase 5 (link-graph activation) composes \`links\` and \`search\`, which **require the OK Hocuspocus server** — Phase 5 step 0 checks for it and exits cleanly with a \`run ok start\` instruction if it is down.
+**Server requirement.** Phases 1-4 run fs-direct — \`exec\` (scan + read) and the \`write\`/\`edit\` verbs (folder frontmatter + templates) need no running server. Phase 5 (link-graph activation) composes \`links\` and \`search\`, which **require the OK Hocuspocus server** — Phase 5 step 0 checks for it and exits cleanly with a \`run ok start\` instruction if it is down.
 
 ---
 
@@ -110,43 +110,42 @@ For **each** folder the user marked \`[KB]\`:
    - If this folder already has its own frontmatter → switch to "extend mode." Show existing keys to user; propose ADDITIONS only.
    - If \`templates_available\` includes a template → skip template extraction. Tell user: "existing template \`<name>\` found; preserving."
 
-5. **Propose folder frontmatter + template.** Both are \`folder_config\` writes — one call per action:
+5. **Propose folder frontmatter + template.** One \`write\`/\`edit\` call per target:
 
    \`\`\`ts
-   folder_config({
-     action: 'set-rule',
-     rules: [{
-       match: '<folder>/**',
+   edit({
+     folder: {
+       path: '<folder>',
        frontmatter: {
          title: '<inferred>',          // e.g., "Specifications"
          description: '<inferred>',    // 1-2 sentences describing the folder's purpose
          tags: ['<inferred>'],         // e.g., ['spec']
        },
-     }],
+     },
    })
 
-   folder_config({
-     action: 'write-template',
-     folder: '<folder>',
-     name: '<inferred-name>',          // e.g., 'SPEC' for specs/, 'REPORT' for reports/
-     frontmatter: { title: '<placeholder>', description: '<placeholder>' },
-     body: '<heading skeleton from siblings; include a frontmatter region with recurring per-doc keys (status, owner, …) as starting values>',
+   write({
+     template: {
+       path: '<folder>/<inferred-name>', // e.g., 'specs/SPEC', 'reports/REPORT'
+       frontmatter: { title: '<placeholder>', description: '<placeholder>' },
+       content: '<heading skeleton from siblings; include a frontmatter region with recurring per-doc keys (status, owner, …) as starting values>',
+     },
    })
    \`\`\`
 
 6. **⛔ STOP gate 4 — Surface proposal to user.** Show: heading set + frontmatter shape + filename pattern + link patterns. Ask: "Apply this proposal? (yes / edit / skip this folder)"
 
-7. **Apply confirmed proposals** via the two \`folder_config\` calls above. Re-run \`exec("ls <folder>")\` to confirm \`templates_available\` + the folder's descriptive \`title\`/\`description\`/\`tags\` are populated.
+7. **Apply confirmed proposals** via the \`edit({ folder })\` + \`write({ template })\` calls above. Re-run \`exec("ls <folder>")\` to confirm \`templates_available\` + the folder's descriptive \`title\`/\`description\`/\`tags\` are populated.
 
 Repeat for every \`[KB]\` folder.
 
-**v1 scope note:** \`discover\` does NOT attempt nested-pattern detection (e.g., applying the same rule across \`specs/*/evidence/\` for every spec's evidence/ subfolder). \`folder_config\` rejects multi-folder globs with \`MULTI_FOLDER_GLOB\`. Users who want nested folder frontmatter set it up manually after \`discover\` finishes the top-level work.
+**v1 scope note:** \`discover\` does NOT attempt nested-pattern detection (e.g., applying the same folder frontmatter across \`specs/*/evidence/\` for every spec's evidence/ subfolder). Each folder is addressed by its own path — one \`edit({ folder })\` call per folder. Users who want nested folder frontmatter set it up manually after \`discover\` finishes the top-level work.
 
 ---
 
 ## Phase 5 — Link-graph activation
 
-The largest phase. Uses the \`links\` tool (every link-graph view) plus \`search\` and \`edit_document\` to apply confirmed link insertions.
+The largest phase. Uses the \`links\` tool (every link-graph view) plus \`search\` and \`edit\` to apply confirmed link insertions.
 
 0. **Server check (required for this phase).** \`links\` and \`search\` need the OK Hocuspocus server. Probe via \`links({ kind: "hubs" })\`. If the response starts with \`"Error: Hocuspocus server is not running"\`, STOP — tell the user "the link-graph phase of discover needs the OK server. Start it with \`ok start\` from a terminal, then re-invoke \`discover\` (Phases 1-4 are already applied; it resumes here)." Exit cleanly.
 
@@ -158,7 +157,7 @@ Six sub-passes, each with its own STOP gate.
 2. For each orphan, run \`links({ kind: "suggest", docName: <orphan> })\`:
    - If \`mentions[]\` is non-empty → there are docs that mention this orphan without linking. Adoption candidates.
    - If \`mentions[]\` is empty → the orphan is **genuinely standalone** (no other doc references it at all). Surface as: "this looks intentionally standalone (e.g., a README). Skip / adopt anyway by linking from a hub / add to \`.okignore\`?"
-3. Confirm per orphan. For each "link" choice, \`edit_document\` on the source doc at the offset \`links({ kind: "suggest" })\` returned to wrap the existing mention in link syntax.
+3. Confirm per orphan. For each "link" choice, \`edit({ document: { path, find, replace } })\` on the source doc — find the existing mention text \`links({ kind: "suggest" })\` surfaced and replace it wrapped in link syntax.
 
 **Note on re-surfacing:** v1 does NOT persist "intentional standalone" markers. Each \`discover\` re-run surfaces the same intentional orphans (root \`README.md\`, \`CONTRIBUTING.md\`, etc.) and the user re-dismisses them. Acceptable minor friction.
 
@@ -175,7 +174,7 @@ Six sub-passes, each with its own STOP gate.
 
 1. Run \`links({ kind: "dead" })\` (no \`sourceDocNames\` → audits the whole corpus).
 2. For each dead link, propose: fix candidate (via \`search\` for the correct target), or delete (remove the link, or the prose around it). Leaving it as an "intentional redlink" is not an option — every dead link is fixed or removed.
-3. Confirm per dead-link. Apply confirmed fixes via \`edit_document\`.
+3. Confirm per dead-link. Apply confirmed fixes via \`edit\`.
 
 ### 5d. Untextualized-reference detection (⛔ STOP gate 5d)
 
@@ -192,7 +191,7 @@ Six sub-passes, each with its own STOP gate.
      line 203: "...per AGENTS.md ecosystem convention" → matches root AGENTS.md — accept as link
    \`\`\`
 
-4. Confirm per source doc (batched). Apply confirmed link insertions via \`edit_document\` using the offsets the \`suggest\` view returned.
+4. Confirm per source doc (batched). Apply confirmed link insertions via \`edit({ document: { path, find, replace } })\` — find the mention text the \`suggest\` view surfaced and replace it wrapped in link syntax.
 
 **Truncation handling:** if the \`suggest\` view returns \`truncated: true\`, the scan hit its time budget. Iterate with smaller scope or accept partial coverage and tell the user.
 
@@ -205,7 +204,7 @@ Harder case: prose discusses a concept covered by another doc without naming it.
 3. For each candidate sibling:
    - Verify it is NOT already linked from this doc (\`links({ kind: "forward", docName: <doc> })\`).
    - Verify content is actually relevant (re-read summary; LLM judgment).
-4. Surface to user with brief justification per pair. Confirm. Apply via \`edit_document\` (insert link in a "Related" or "References" section).
+4. Surface to user with brief justification per pair. Confirm. Apply via \`edit\` (insert link in a "Related" or "References" section).
 
 **Caveat:** vague-referential is LLM-judgment-heavy. False positives are expected; the user is the final arbiter. If the user rejects > 50% of proposals in a batch, recalibrate (tighten concept-extraction, raise relevance bar).
 
@@ -215,7 +214,7 @@ Harder case: prose discusses a concept covered by another doc without naming it.
    - Wiki-link syntax: \`[[Page Title]]\` (legacy)
    - Relative-markdown: \`[text](./path.md)\` or \`[text](path.md)\` (current OK recommended)
 2. Report ratio to user. If mixed, propose a one-time standardization: convert all \`[[Page]]\` to \`[Page](./path.md)\`. Ambiguous \`[[Page]]\` (multiple matching files) → surface for confirmation.
-3. Apply via \`edit_document\` on each affected doc, resolving page titles to file paths via \`exec("ls")\` / \`search\`.
+3. Apply via \`edit\` on each affected doc, resolving page titles to file paths via \`exec("ls")\` / \`search\`.
 
 ---
 

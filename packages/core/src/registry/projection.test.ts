@@ -159,9 +159,9 @@ describe('renderInventoryFooter (FR-1)', () => {
     expect(text).not.toContain('`MermaidFence`');
   });
 
-  test('carries the look-up pointer to get_components', () => {
+  test('carries the look-up pointer to palette', () => {
     const text = renderInventoryFooter();
-    expect(text).toContain('get_components');
+    expect(text).toContain('palette');
   });
 
   test('mentions fenced code blocks as a separate authoring path (not a component)', () => {

@@ -83,7 +83,7 @@ describe('resolve_conflict MCP tool', () => {
     register(server, makeDeps('http://localhost:4321'));
     const tool = getTool(registrations, 'resolve_conflict');
 
-    expect(tool.config.description).toContain('list_conflicts');
+    expect(tool.config.description).toContain('conflicts({ kind: "list" })');
     expect(tool.config.description).toContain('best-effort');
     expect(tool.config.description).toContain('non-atomic');
     expect(tool.config.description).toContain('DESTRUCTIVE');

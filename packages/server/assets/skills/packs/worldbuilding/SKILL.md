@@ -30,4 +30,4 @@ This project is a fiction encyclopedia. The graph is the product: characters, se
 
 ## Templates
 
-Create with `write_document({ template: "<name>", … })`. Templates carry only structure; section meaning is described here, not inside the document body.
+Create with `write({ document: { path, template: "<name>" } })`. Templates carry only structure; section meaning is described here, not inside the document body.

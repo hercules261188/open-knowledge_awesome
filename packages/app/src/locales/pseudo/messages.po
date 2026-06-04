@@ -37,7 +37,7 @@ msgstr ""
 msgid "\"{docName}\" took too long. Check your connection."
 msgstr ""
 
-#: src/components/FolderDefaultsCard.tsx
+#: src/components/FolderPropertiesCard.tsx
 msgid "\"{trimmed}\" already exists here"
 msgstr ""
 
@@ -438,6 +438,10 @@ msgstr ""
 msgid "A template named <0>{trimmedSlug}</0> already exists here. Saving creates a local copy that overrides it for this folder."
 msgstr ""
 
+#: src/components/FolderPropertiesCard.tsx
+msgid "A title, description, tags — anything that describes this folder."
+msgstr ""
+
 #: src/editor/slash-command/items.tsx
 msgid "Above"
 msgstr ""
@@ -482,7 +486,7 @@ msgstr ""
 #~ msgid "Add a blank field"
 #~ msgstr ""
 
-#: src/components/FolderDefaultsCard.tsx
+#: src/components/FolderPropertiesCard.tsx
 msgid "Add a property"
 msgstr ""
 
@@ -2164,7 +2168,7 @@ msgstr ""
 msgid "Failed to load file (HTTP {status})"
 msgstr ""
 
-#: src/components/FolderDefaultsCard.tsx
+#: src/components/FolderPropertiesCard.tsx
 msgid "Failed to load folder properties: {message}"
 msgstr ""
 
@@ -2424,7 +2428,7 @@ msgstr ""
 msgid "Folder name: {detail}"
 msgstr ""
 
-#: src/components/FolderDefaultsCard.tsx
+#: src/components/FolderPropertiesCard.tsx
 msgid "Folder properties"
 msgstr ""
 
@@ -3247,7 +3251,7 @@ msgstr ""
 msgid "Name cannot be empty"
 msgstr ""
 
-#: src/components/FolderDefaultsCard.tsx
+#: src/components/FolderPropertiesCard.tsx
 #: src/components/PropertyPanel.tsx
 msgid "Name is required"
 msgstr ""
@@ -3586,7 +3590,7 @@ msgstr ""
 msgid "Not installed"
 msgstr ""
 
-#: src/components/FolderDefaultsCard.tsx
+#: src/components/FolderPropertiesCard.tsx
 msgid "Nothing set yet."
 msgstr ""
 
@@ -4291,6 +4295,10 @@ msgstr ""
 #~ msgid "Properties that describe this folder itself — any properties you like, just like a doc's. They don't flow into the docs inside it; to give new docs starting properties, add a template."
 #~ msgstr ""
 
+#: src/components/FolderPropertiesCard.tsx
+#~ msgid "Properties that describe this folder."
+#~ msgstr ""
+
 #: src/components/PropertyPanel.tsx
 msgid "Property \"{trimmed}\" already exists"
 msgstr ""
@@ -4459,7 +4467,7 @@ msgstr ""
 msgid "Remove {tag}"
 msgstr ""
 
-#: src/components/FolderDefaultsCard.tsx
+#: src/components/FolderPropertiesCard.tsx
 msgid "Remove failed: {error}"
 msgstr ""
 
@@ -4691,7 +4699,7 @@ msgstr ""
 msgid "Save changes"
 msgstr ""
 
-#: src/components/FolderDefaultsCard.tsx
+#: src/components/FolderPropertiesCard.tsx
 msgid "Save failed: {error}"
 msgstr ""
 
@@ -5842,7 +5850,7 @@ msgstr ""
 msgid "User"
 msgstr ""
 
-#: src/components/FolderDefaultsCard.tsx
+#: src/components/FolderPropertiesCard.tsx
 msgid "Value is required"
 msgstr ""
 
@@ -5927,9 +5935,9 @@ msgstr ""
 #~ msgid "What should the AI do? (optional)"
 #~ msgstr ""
 
-#: src/components/FolderDefaultsCard.tsx
-msgid "What this folder is about — give it a title, description, tags, or any properties you like, just like a doc has. This describes the folder itself; it is not copied into the docs inside it. To start new docs in this folder with a ready-made set of properties, add a template instead."
-msgstr ""
+#: src/components/FolderPropertiesCard.tsx
+#~ msgid "What this folder is about — give it a title, description, tags, or any properties you like, just like a doc has. This describes the folder itself; it is not copied into the docs inside it. To start new docs in this folder with a ready-made set of properties, add a template instead."
+#~ msgstr ""
 
 #: src/components/settings/SettingsDialogBody.tsx
 msgid "When enabled, the agent opens or refreshes the preview after each edit. Disable if you manage your own preview window (OK Desktop, a browser tab on another display, etc.)."

@@ -13,8 +13,8 @@ test('buildInstructions carries the STOP rule on native tools for in-scope markd
   const text = buildInstructions(defaultContent());
   expect(text).toContain('STOP');
   expect(text).toContain('Open Knowledge MCP configured');
-  expect(text).toContain('write_document');
-  expect(text).toContain('edit_document');
+  expect(text).toContain('write');
+  expect(text).toContain('edit');
 });
 
 test('buildInstructions carries the preview-attach rule', () => {
@@ -26,9 +26,7 @@ test('buildInstructions carries the preview-attach rule', () => {
 
 test('buildInstructions carries the autoOpen directional bullet', () => {
   const text = buildInstructions(defaultContent());
-  expect(text).toContain(
-    'Honor `autoOpen`** (on `get_preview_url`, or on `warning` for write tools)',
-  );
+  expect(text).toContain('Honor `autoOpen`** (on `preview_url`, or on `warning` for write tools)');
   expect(text).toContain('do not open or refresh any preview UI');
 });
 

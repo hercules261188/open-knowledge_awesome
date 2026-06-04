@@ -81,7 +81,17 @@ async function callWriteDocument(
       jsonrpc: '2.0',
       id: rpcId,
       method: 'tools/call',
-      params: { name: 'write_document', arguments: args },
+      params: {
+        name: 'write',
+        arguments: {
+          document: {
+            path: args.docName,
+            content: args.markdown,
+            ...(args.position ? { position: args.position } : {}),
+          },
+          ...(args.cwd ? { cwd: args.cwd } : {}),
+        },
+      },
     }),
   });
   expect(res.status).toBe(200);

@@ -101,7 +101,7 @@ describe('McpLogger', () => {
 
     const logger = new McpLogger('mcp');
     logger.info('tool finish', {
-      tool: 'get_preview_url',
+      tool: 'preview_url',
       requestId: 'req-123',
       result: {
         previewUrl: 'http://localhost:4242/#/notes/test',
@@ -111,14 +111,14 @@ describe('McpLogger', () => {
 
     const stderrEntry = JSON.parse(stderrLines[0] ?? '');
     expect(stderrEntry.msg).toBe('tool finish');
-    expect(stderrEntry.tool).toBe('get_preview_url');
+    expect(stderrEntry.tool).toBe('preview_url');
 
     const fileLine = readFileSync(logFile, 'utf-8');
     expect(fileLine).toBe(stderrLines[0]);
 
     const fileEntry = JSON.parse(fileLine);
     expect(fileEntry.msg).toBe('tool finish');
-    expect(fileEntry.tool).toBe('get_preview_url');
+    expect(fileEntry.tool).toBe('preview_url');
     expect(fileEntry.requestId).toBe('req-123');
     expect(fileEntry.result).toEqual({
       previewUrl: 'http://localhost:4242/#/notes/test',
@@ -136,7 +136,7 @@ describe('McpLogger', () => {
     logger.info('small context', { backoffMs: 8000, attempt: 3 });
 
     logger.info('large context', {
-      tool: 'get_preview_url',
+      tool: 'preview_url',
       result: {
         previewUrl: 'http://localhost:4242/#/notes/very/long/path/test',
         previewUrlSource: 'lock',
@@ -156,7 +156,7 @@ describe('McpLogger', () => {
     });
     expect(largeEntry).toMatchObject({
       msg: 'large context',
-      tool: 'get_preview_url',
+      tool: 'preview_url',
       requestId: 'req-123',
       result: {
         previewUrl: 'http://localhost:4242/#/notes/very/long/path/test',

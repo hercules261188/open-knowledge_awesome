@@ -1,10 +1,22 @@
-import { validateDocName } from '@inkeep/open-knowledge-core';
+import { validateDocName, WriteWarningSchema } from '@inkeep/open-knowledge-core';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { Config } from '../../config/schema.ts';
+import type { AgentIdentity } from '../agent-identity.ts';
 
 export type ServerInstance = McpServer;
 export type ConfigOrResolver = Config | ((cwd?: string) => Promise<Config>);
+
+export function agentIdentityFields(identity: AgentIdentity | undefined): Record<string, unknown> {
+  return identity
+    ? {
+        agentId: identity.connectionId,
+        agentName: identity.displayName,
+        clientName: identity.clientInfo?.name,
+        colorSeed: identity.colorSeed,
+      }
+    : {};
+}
 export const ROUTED_CWD_DESCRIPTION =
   'Absolute host path inside the target Open Knowledge project. Required when the MCP server is registered globally (e.g. `npx @inkeep/open-knowledge mcp` once at the host level, routing per call), unless the MCP client advertises exactly one root via the `roots` capability — that single root is then used as the implicit `cwd`. Optional when the server is anchored to a single project (the per-project HTTP MCP server defaults to its configured project root).';
 
@@ -17,6 +29,67 @@ export const summaryArgSchema = z
   .describe(
     'Optional one-line user-outcome description (≤80 chars). Appears as a bullet in the timeline.',
   );
+
+export const VERSION_FIELD_DESCRIBE =
+  'A 40-character commit SHA identifying a saved version. Produced by `checkpoint`, listed by `history` as `entries[].version`, and consumed here — the same `version` field name across all three.';
+
+export const versionInputSchema = z
+  .string()
+  .length(40)
+  .regex(/^[0-9a-f]+$/i)
+  .describe(VERSION_FIELD_DESCRIBE);
+
+export const previewUrlOutputField = z
+  .string()
+  .nullable()
+  .describe('Route-only preview URL (`/#/<doc>`, no host:port), or null when no UI is running.');
+
+export const previewUrlSourceField = z
+  .string()
+  .optional()
+  .describe('How the previewUrl was resolved (e.g. the UI lock).');
+
+export const previousPreviewUrlField = z
+  .string()
+  .optional()
+  .describe('Route of the prior/removed path, for closing a stale preview tab.');
+
+export const summaryOutputSchema = z
+  .object({
+    value: z.string(),
+    truncatedFrom: z.number().optional(),
+    hint: z.string().optional(),
+  })
+  .describe('Normalized change-note summary, when one was recorded.');
+
+export const looseObjectArray = z.array(z.record(z.string(), z.unknown()));
+
+export const previewAttachWarningField = z
+  .record(z.string(), z.unknown())
+  .optional()
+  .describe('Preview-attach hint (`{ action, previewUrl?, message? }`) when relevant.');
+
+export const documentResultBaseShape = {
+  summary: summaryOutputSchema.optional(),
+  contentDivergence: WriteWarningSchema.optional().describe(
+    "Present when the converged Y.Text didn't byte-match the bytes you composed, or when an out-of-band disk edit was reconciled in before your write landed.",
+  ),
+} as const;
+
+export function nestDocResult(
+  preview: { url: string; source: string } | null | undefined,
+  warning: Record<string, unknown> | undefined,
+  docFields: Record<string, unknown>,
+): Record<string, unknown> {
+  const structured: Record<string, unknown> = {};
+  if (preview) {
+    structured.previewUrl = preview.url;
+    structured.previewUrlSource = preview.source;
+  }
+  if (warning) structured.warning = warning;
+  if (Object.keys(docFields).length > 0) structured.document = docFields;
+  return structured;
+}
 
 export function textResult(text: string, isError?: boolean) {
   return {
@@ -89,7 +162,7 @@ Open Knowledge accretes a persistent wiki through three workflow tools, mapped t
 - **Wiki, provisional** — \`research\`
 - **Wiki, canonical** — \`consolidate\`
 
-(Project-level folder structure: \`ok seed\` for fresh repos with the Karpathy three-layer; \`discover\` MCP tool for existing-content repos that need conventions extracted from siblings. Neither is required — these three tools work against any folder structure the project already uses.)
+(Project-level folder structure: \`ok seed\` for fresh repos with the Karpathy three-layer; \`workflow({ kind: "discover" })\` for existing-content repos that need conventions extracted from siblings. Neither is required — these three tools work against any folder structure the project already uses.)
 
 **This tool operates in the ${ROLE_LABEL[role]}.**
 
@@ -183,7 +256,7 @@ export function normalizeDocName(
   if (lower.endsWith('.markdown')) {
     return {
       ok: false,
-      error: `Error: docName "${raw}" ends in ".markdown", which is not a supported extension. Use ".md" or ".mdx", or strip the extension to let the server auto-detect.`,
+      error: `Error: "${raw}" ends in ".markdown", which is not a supported extension. Use ".md" or ".mdx", or strip the extension to let the server auto-detect.`,
     };
   }
   let candidate = raw;
@@ -194,7 +267,7 @@ export function normalizeDocName(
   }
   const validation = validateDocName(candidate);
   if (!validation.ok) {
-    return { ok: false, error: `Error: docName "${raw}" is invalid — ${validation.reason}.` };
+    return { ok: false, error: `Error: "${raw}" is invalid — ${validation.reason}.` };
   }
   return { ok: true, docName: candidate };
 }

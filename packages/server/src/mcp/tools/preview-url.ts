@@ -45,7 +45,7 @@ type PreviewAttachWarning =
 const START_UI_MESSAGE =
   'No UI is running for this project. Start one to see the preview: `ok ui` (terminal), `preview_start("open-knowledge-ui")` (Claude Code Desktop), or open the project in OK Electron.';
 const ATTACH_PREVIEW_ONCE_MESSAGE =
-  'No browser is attached to the preview. Open it with preview_start, or call get_preview_url for the URL.';
+  'No browser is attached to the preview. Open it with preview_start, or call preview_url for the URL.';
 
 export function buildPreviewAttachWarning(
   preview: { url: string } | null,

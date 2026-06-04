@@ -107,7 +107,7 @@ describe('AddPropertyRow — typing target stays focused after type change (Prop
   });
 });
 
-describe('AddPropertyRow — typing target stays focused after type change (FolderDefaultsCard consumer)', () => {
+describe('AddPropertyRow — typing target stays focused after type change (FolderPropertiesCard consumer)', () => {
   afterEach(() => {
     cleanup();
   });

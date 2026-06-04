@@ -34,7 +34,7 @@ function captureRegistration(cwd: string, config: Config = BASE_CONFIG): ToolHan
       captured = handler;
     },
     tool() {
-      throw new Error('legacy tool() should not be called by get_preview_url');
+      throw new Error('legacy tool() should not be called by preview_url');
     },
   } as unknown as ServerInstance;
   register(server, {
@@ -45,12 +45,12 @@ function captureRegistration(cwd: string, config: Config = BASE_CONFIG): ToolHan
   return captured;
 }
 
-describe('get_preview_url tool — UI running', () => {
+describe('preview_url tool — UI running', () => {
   test('with docName: composes baseUrl + the doc route', async () => {
     const cwd = mkdtempSync(join(tmpdir(), 'ok-get-preview-url-'));
     const uiBase = bindTestUiLock(cwd);
     const handler = captureRegistration(cwd);
-    const result = await handler({ docName: 'specs/foo/SPEC' });
+    const result = await handler({ document: 'specs/foo/SPEC' });
     expect(result.isError).toBeUndefined();
     expect(result.structuredContent?.running).toBe(true);
     expect(result.structuredContent?.baseUrl).toBe(uiBase);
@@ -79,7 +79,7 @@ describe('get_preview_url tool — UI running', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'ok-get-preview-url-'));
     bindTestUiLock(cwd);
     const handler = captureRegistration(cwd);
-    await handler({ docName: 'specs/foo/SPEC', armPaneTarget: true });
+    await handler({ document: 'specs/foo/SPEC', armPaneTarget: true });
     expect(readArmedPaneTarget(resolveLockDir(cwd))).toBe('#/specs/foo/SPEC');
   });
 
@@ -87,7 +87,7 @@ describe('get_preview_url tool — UI running', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'ok-get-preview-url-'));
     bindTestUiLock(cwd);
     const handler = captureRegistration(cwd);
-    await handler({ docName: 'specs/foo/SPEC' });
+    await handler({ document: 'specs/foo/SPEC' });
     expect(readArmedPaneTarget(resolveLockDir(cwd))).toBeNull();
   });
 
@@ -112,7 +112,7 @@ describe('get_preview_url tool — UI running', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'ok-get-preview-url-'));
     bindTestUiLock(cwd);
     const handler = captureRegistration(cwd);
-    const result = await handler({ docName: 'specs/foo/SPEC', folder: 'specs/foo' });
+    const result = await handler({ document: 'specs/foo/SPEC', folder: 'specs/foo' });
     expect(result.isError).toBe(true);
     expect(result.content[0]?.text).toContain('mutually exclusive');
     expect(readArmedPaneTarget(resolveLockDir(cwd))).toBeNull();
@@ -134,16 +134,16 @@ describe('get_preview_url tool — UI running', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'ok-get-preview-url-'));
     const uiBase = bindTestUiLock(cwd);
     const handler = captureRegistration(cwd);
-    const result = await handler({ docName: 'notes/My Doc' });
+    const result = await handler({ document: 'notes/My Doc' });
     expect(result.structuredContent?.url).toBe(`${uiBase}/#/notes/My%20Doc`);
   });
 });
 
-describe('get_preview_url tool — no UI running', () => {
+describe('preview_url tool — no UI running', () => {
   test('returns running:false + null url when no ui.lock is present', async () => {
     const cwd = mkdtempSync(join(tmpdir(), 'ok-get-preview-url-'));
     const handler = captureRegistration(cwd);
-    const result = await handler({ docName: 'specs/foo/SPEC' });
+    const result = await handler({ document: 'specs/foo/SPEC' });
     expect(result.isError).toBeUndefined();
     expect(result.structuredContent?.running).toBe(false);
     expect(result.structuredContent?.url).toBeNull();
@@ -162,12 +162,12 @@ describe('get_preview_url tool — no UI running', () => {
   });
 });
 
-describe('get_preview_url tool — autoOpen field', () => {
+describe('preview_url tool — autoOpen field', () => {
   test('echoes resolved autoOpen=false when the user has disabled it', async () => {
     const cwd = mkdtempSync(join(tmpdir(), 'ok-get-preview-url-'));
     bindTestUiLock(cwd);
     const handler = captureRegistration(cwd, CONFIG_AUTOOPEN_OFF);
-    const result = await handler({ docName: 'specs/foo/SPEC' });
+    const result = await handler({ document: 'specs/foo/SPEC' });
     expect(result.isError).toBeUndefined();
     expect(result.structuredContent?.running).toBe(true);
     expect(result.structuredContent?.autoOpen).toBe(false);
@@ -193,7 +193,7 @@ describe('get_preview_url tool — autoOpen field', () => {
         captured = handler;
       },
       tool() {
-        throw new Error('legacy tool() should not be called by get_preview_url');
+        throw new Error('legacy tool() should not be called by preview_url');
       },
     } as unknown as ServerInstance;
     register(server, {
@@ -203,16 +203,16 @@ describe('get_preview_url tool — autoOpen field', () => {
     if (!captured) throw new Error('tool not registered');
     const handler = captured as ToolHandler;
 
-    const first = await handler({ docName: 'foo' });
+    const first = await handler({ document: 'foo' });
     expect(first.structuredContent?.autoOpen).toBe(true);
 
     currentAutoOpen = false;
-    const second = await handler({ docName: 'foo' });
+    const second = await handler({ document: 'foo' });
     expect(second.structuredContent?.autoOpen).toBe(false);
   });
 });
 
-describe('get_preview_url tool — error path', () => {
+describe('preview_url tool — error path', () => {
   test('returns isError when resolveCwd rejects', async () => {
     let captured: ToolHandler | undefined;
     const server = {
@@ -220,7 +220,7 @@ describe('get_preview_url tool — error path', () => {
         captured = handler;
       },
       tool() {
-        throw new Error('legacy tool() should not be called by get_preview_url');
+        throw new Error('legacy tool() should not be called by preview_url');
       },
     } as unknown as ServerInstance;
     register(server, {
@@ -230,7 +230,7 @@ describe('get_preview_url tool — error path', () => {
       },
     });
     if (!captured) throw new Error('tool not registered');
-    const result = await captured({ docName: 'specs/foo/SPEC' });
+    const result = await captured({ document: 'specs/foo/SPEC' });
     expect(result.isError).toBe(true);
     expect(result.content[0]?.text).toContain('no roots configured');
   });

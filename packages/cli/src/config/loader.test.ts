@@ -211,7 +211,7 @@ appearance:
     const msg = caught?.message ?? '';
     expect(msg).toContain('folders');
     expect(msg).toContain('.ok/');
-    expect(msg).toContain('folder_config');
+    expect(msg).toContain('edit({ folder');
     const expectedPath = resolve(testDir, OK_DIR, 'config.yml');
     expect(msg).toMatch(new RegExp(`${expectedPath.replace(/[/\\.]/g, '\\$&')}:\\d+:\\d+`));
   });
