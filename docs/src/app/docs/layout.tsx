@@ -4,7 +4,10 @@ import { source } from '@/lib/source';
 
 export default function Layout({ children }: LayoutProps<'/docs'>) {
   return (
-    <DocsLayout tree={source.pageTree} {...baseOptions()}>
+    <DocsLayout
+      tree={source.pageTree}
+      {...baseOptions({ wordmarkClassName: 'h-6 w-auto text-(--slide-text)' })}
+    >
       {children}
     </DocsLayout>
   );

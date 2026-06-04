@@ -1,15 +1,14 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
-import Image from 'next/image';
+import { OkWordmark } from '@/components/ok-wordmark';
 
-export function baseOptions(): BaseLayoutProps {
+export function baseOptions({
+  wordmarkClassName = 'h-8 w-auto text-(--slide-text)',
+}: {
+  wordmarkClassName?: string;
+} = {}): BaseLayoutProps {
   return {
     nav: {
-      title: (
-        <>
-          <Image src="/ok-logo.png" alt="Open Knowledge" width={24} height={24} />
-          Open Knowledge
-        </>
-      ),
+      title: <OkWordmark aria-label="Open Knowledge" className={wordmarkClassName} />,
     },
     githubUrl: 'https://github.com/inkeep/open-knowledge',
   };
