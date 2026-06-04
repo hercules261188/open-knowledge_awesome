@@ -207,3 +207,18 @@ describe('Recent-projects search affordance (source-level guards)', () => {
     expect(div).toMatch(/overscroll-contain/);
   });
 });
+
+describe('macOS dropdown-open regression guard (no Radix Tooltip on the trigger)', () => {
+  const SRC_PATH = join(__dirname, 'ProjectSwitcher.tsx');
+  const src = readFileSync(SRC_PATH, 'utf-8');
+
+  test('trigger is not wrapped in a Radix Tooltip; project path uses native title', () => {
+    expect(src).not.toContain("from '@/components/ui/tooltip'");
+    expect(src).not.toMatch(/<TooltipTrigger\b/);
+    const triggerTag = src.match(
+      /<SidebarMenuButton\b[\s\S]*?data-testid="project-switcher-trigger"[\s\S]*?>/,
+    )?.[0];
+    expect(triggerTag, 'project switcher trigger button not found').toBeTruthy();
+    expect(triggerTag).toMatch(/title=\{bridge\.config\.projectPath\}/);
+  });
+});

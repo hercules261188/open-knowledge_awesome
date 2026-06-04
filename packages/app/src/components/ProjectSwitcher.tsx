@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { SidebarMenuButton } from '@/components/ui/sidebar';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCurrentBranch } from '@/hooks/use-current-branch';
 import type { OkDesktopBridge, RecentProjectEntry } from '@/lib/desktop-bridge-types';
 import { runWithToast as runWithToastBase } from '@/lib/error-state';
@@ -94,37 +93,43 @@ export function ProjectSwitcher({ bridge }: ProjectSwitcherProps) {
           if (!next) setSearch('');
         }}
       >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DropdownMenuTrigger asChild>
-              <SidebarMenuButton
-                className={cn(
-                  'justify-between text-sidebar-foreground/70 hover:text-sidebar-foreground! data-open:hover:text-sidebar-foreground!',
-                  branch !== null && 'h-auto py-1.5',
-                )}
-                data-testid="project-switcher-trigger"
-                aria-label={t`Open project menu`}
-              >
-                <span className="flex min-w-0 flex-col gap-0.5">
-                  <span className="truncate">{bridge.config.projectName}</span>
-                  {branch !== null ? (
-                    <span
-                      className="flex min-w-0 items-center gap-1 text-xs text-sidebar-foreground/50 group-hover/menu-button:text-sidebar-foreground"
-                      data-testid="project-switcher-branch"
-                    >
-                      <GitBranch aria-hidden="true" className="size-3! shrink-0" />
-                      <span className="truncate">{branch}</span>
-                    </span>
-                  ) : null}
+        {/*
+          Bare trigger — do NOT wrap in a Radix <Tooltip>. The project path is
+          surfaced via the native `title` attribute instead. A Radix Tooltip
+          here breaks the dropdown: once the tooltip has opened on hover,
+          clicking the trigger races the tooltip layer's pointerdown-teardown
+          against the dropdown's open on the macOS desktop host, and the menu
+          never stays open (the trigger shows its click state but nothing
+          opens). The native title has no layer to tear down, so the dropdown
+          opens cleanly. This is the mirror of the EditorHeader Open-with-AI
+          trigger, which is bare for the same class of pointer-interaction
+          reason.
+        */}
+        <DropdownMenuTrigger asChild>
+          <SidebarMenuButton
+            className={cn(
+              'justify-between text-sidebar-foreground/70 hover:text-sidebar-foreground! data-open:hover:text-sidebar-foreground!',
+              branch !== null && 'h-auto py-1.5',
+            )}
+            data-testid="project-switcher-trigger"
+            aria-label={t`Open project menu`}
+            title={bridge.config.projectPath}
+          >
+            <span className="flex min-w-0 flex-col gap-0.5">
+              <span className="truncate">{bridge.config.projectName}</span>
+              {branch !== null ? (
+                <span
+                  className="flex min-w-0 items-center gap-1 text-xs text-sidebar-foreground/50 group-hover/menu-button:text-sidebar-foreground"
+                  data-testid="project-switcher-branch"
+                >
+                  <GitBranch aria-hidden="true" className="size-3! shrink-0" />
+                  <span className="truncate">{branch}</span>
                 </span>
-                <ChevronsUpDown aria-hidden="true" className="opacity-60" />
-              </SidebarMenuButton>
-            </DropdownMenuTrigger>
-          </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-xs break-all">
-            {bridge.config.projectPath}
-          </TooltipContent>
-        </Tooltip>
+              ) : null}
+            </span>
+            <ChevronsUpDown aria-hidden="true" className="opacity-60" />
+          </SidebarMenuButton>
+        </DropdownMenuTrigger>
         <DropdownMenuContent
           align="start"
           side="top"
