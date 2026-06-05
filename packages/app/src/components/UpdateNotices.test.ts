@@ -191,6 +191,7 @@ describe('Notice A — ok:update:downloaded', () => {
     expect(notice.action?.label).toBe(TOAST_A_ACTION);
     expect(notice.variant).toBeUndefined();
     expect(notice.priority).toBe(2); // update-downloaded = A
+    expect(notice.dismissible).toBeUndefined();
   });
 
   test('action onClick invokes bridge.update.relaunchNow', () => {
@@ -203,7 +204,7 @@ describe('Notice A — ok:update:downloaded', () => {
     expect(bridge.update.relaunchNow).toHaveBeenCalledTimes(1);
   });
 
-  test('action onClick synchronously swaps Toast A in-place to a button-less in-progress card', () => {
+  test('action onClick synchronously swaps Toast A in-place to a button-less, non-dismissible in-progress card', () => {
     const bridge = makeFakeBridge();
     const addNotice = mock<(notice: UpdateNotice) => void>(() => {});
     attachUpdateSubscribers(castBridge(bridge), addNotice);
@@ -215,6 +216,7 @@ describe('Notice A — ok:update:downloaded', () => {
     expect(inProgress.body).toBe(TOAST_A_PROGRESS_BODY);
     expect(inProgress.action).toBeUndefined();
     expect(inProgress.priority).toBe(2);
+    expect(inProgress.dismissible).toBe(false);
   });
 
   test('relaunchNow rejection → error notice with appended detail + armed card restored for retry', async () => {

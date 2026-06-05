@@ -27,20 +27,21 @@ export {
   WHATS_NEW_AUTO_DISMISS_MS,
 } from './UpdateNotices.shared';
 
-function NoticeCard({ notice, onDismiss }: { notice: UpdateNotice; onDismiss: () => void }) {
+export function NoticeCard({ notice, onDismiss }: { notice: UpdateNotice; onDismiss: () => void }) {
   const { t } = useLingui();
   const borderTone = notice.variant === 'error' ? 'border-destructive/60' : 'border-sidebar-border';
-  const dismissButton = (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="size-5 shrink-0 text-muted-foreground hover:text-sidebar-foreground"
-      aria-label={t`Dismiss notice`}
-      onClick={onDismiss}
-    >
-      <X aria-hidden="true" className="size-3" />
-    </Button>
-  );
+  const dismissButton =
+    notice.dismissible === false ? null : (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-5 shrink-0 text-muted-foreground hover:text-sidebar-foreground"
+        aria-label={t`Dismiss notice`}
+        onClick={onDismiss}
+      >
+        <X aria-hidden="true" className="size-3" />
+      </Button>
+    );
   const actionButtonClass =
     'shrink-0 text-xs font-medium underline underline-offset-2 decoration-muted-foreground/40 hover:text-sidebar-foreground hover:decoration-sidebar-foreground';
 

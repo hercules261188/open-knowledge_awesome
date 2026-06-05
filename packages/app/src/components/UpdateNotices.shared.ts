@@ -37,6 +37,7 @@ export interface UpdateNotice {
   onDismiss?: () => void;
   variant?: 'info' | 'error';
   priority: number;
+  dismissible?: boolean;
 }
 
 const PRIORITY_SCHEMA_INCOMPATIBILITY = 0;
@@ -76,6 +77,7 @@ export function attachUpdateSubscribers(
                 id: noticeId,
                 body: TOAST_A_PROGRESS_BODY,
                 priority: PRIORITY_UPDATE_DOWNLOADED,
+                dismissible: false,
               });
               bridge.update.relaunchNow().then(
                 () => {
