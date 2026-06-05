@@ -14,6 +14,7 @@
     "-KCZ6n": [
       "Mark a block as the source of truth. Mirror references elsewhere render this content read-only and update live as you edit here."
     ],
+    "-LHLx7": ["edited template"],
     "-Q7TT9": ["That folder isn't an Open Knowledge project yet. Initialize it and open?"],
     "-QCLWk": ["Templates available"],
     "-Qw-1t": ["GitHub authentication failed. Try signing in again."],
@@ -77,6 +78,7 @@
       "Switching to <0>local-only</0> will refuse until they're untracked via<1> git rm --cached</1>."
     ],
     "1ZpfyB": ["Open with AI ", ["displayName"], ", ", ["hint"]],
+    "1ZwmkP": ["template"],
     "1aPxWt": ["New blank field name"],
     "1bDVu5": ["Workspace Command Palette"],
     "1d1F11": ["Select all files and folders"],
@@ -518,6 +520,7 @@
     "EcM3k7": ["Failed to clean up pending ", ["kind"]],
     "EcR0fl": ["Checking for installed agents"],
     "EeRZnZ": ["Expand burst ", ["burstNumber"], " diff"],
+    "Ef7StM": ["Unknown"],
     "EhDLBx": ["You modified <0>", ["filePath"], "</0> locally, but it was deleted upstream."],
     "Ehkru0": ["Open, navigate, accept, or dismiss CodeMirror completion suggestions."],
     "EiVgl5": ["You don't have permission to push to this repo."],
@@ -551,6 +554,7 @@
     "FjkaiT": ["Zoom out"],
     "FnMkli": ["Sync disabled — you don't have permission to push"],
     "Fqr8BP": ["Multi-page PDF viewer with toolbar controls (thumbnails, page nav, zoom)."],
+    "FvMSms": ["Renaming changes the file on disk and the id agents use to pick this template."],
     "FvpFSZ": ["Reveal in Finder, ", ["hint"]],
     "Fxf4jq": ["Description (optional)"],
     "FyW0WO": ["Authorize in browser"],
@@ -679,6 +683,7 @@
     "KDuPiY": ["Uploading ", ["fileName"]],
     "KDw4GX": ["Try again"],
     "KFdXwz": ["Show panel (", ["panelShortcut"], ")"],
+    "KPW5WC": ["moved template"],
     "KRJ6xh": ["No tags yet. Continue typing to create one."],
     "KWL_Ih": ["Blog post"],
     "KX1MZR": ["Your repositories"],
@@ -866,6 +871,7 @@
     "QI4KgP": [["fileLabel"], " · ", ["folderLabel"]],
     "QJX5AO": ["Sharing"],
     "QQghPu": ["Install in Claude Desktop"],
+    "QR5SP1": ["created template"],
     "QWT-Z9": ["Read the <0>docs<1> ↗</1></0> for details."],
     "QWks14": ["A short line shown under the name in the template list."],
     "QcpeeE": ["Navigate to ", ["docName"]],
@@ -1039,6 +1045,7 @@
     "X9VpsP": ["Loading folder contents"],
     "XDzAnp": ["Opens in a new tab"],
     "XH30C4": ["document"],
+    "XJOV1Y": ["Activity"],
     "XPJ0sN": [["settingsDescriptorLabel"], " properties"],
     "XPqe3B": ["Create new tag #", ["tagValue"]],
     "XRuL0i": ["Create page"],
@@ -1071,6 +1078,7 @@
     "YC6_wP": ["Edit ", ["keyName"]],
     "YEP3X2": ["Delete a table when the active table cell selection covers the full table."],
     "YGIi_c": ["Reinstall"],
+    "YKLP_-": ["Template renamed"],
     "YPFBfr": [["detail"], " - ", ["kind"], " \"", ["createdPath"], "\" still exists on disk"],
     "YSFv5w": ["No git repository — config sharing does not apply here."],
     "YTLmTM": ["Remove the parent <0>.git</0> folder"],
@@ -1107,11 +1115,13 @@
     "ZBt4rI": ["Instruction for the AI"],
     "ZLQol-": ["You can turn this on later in <0>Settings → Sync</0>."],
     "ZNK2Tq": ["root"],
+    "ZQLDTl": ["created folder"],
     "ZU8VV_": ["Remove failed: ", ["error"]],
     "ZWgr0b": ["In a subfolder"],
     "ZWolSV": [
       "You picked the filesystem root (/). Scaffolding here will scan every file on this machine — make sure that's what you want."
     ],
+    "ZWxfrc": ["cleared folder properties"],
     "ZWyHmq": ["This project"],
     "ZhhOwV": ["Quote"],
     "ZjtgI-": ["Command palette"],
@@ -1154,8 +1164,10 @@
     "_TDESN": ["Network error - ", ["kind"], " \"", ["createdPath"], "\" still exists on disk"],
     "_TF8ep": ["Failed to render PDF"],
     "_VRtd7": ["Couldn't send the selection — please try again."],
+    "_gkGSK": ["deleted template"],
     "_qD6mn": ["Pick the folder where you've cloned it."],
     "_rP3HI": [["minutes"], "m ago"],
+    "_tekeB": ["updated folder properties"],
     "a-cKXz": ["Select all source"],
     "a4_eNe": [
       "Branch switched but the document could not be opened — try navigating to it manually."
@@ -1419,6 +1431,7 @@
     ],
     "jPUPvG": ["Couldn't resolve the conflict for ", ["filePath"], "."],
     "jRHdCz": ["Failed to load PDF"],
+    "jSO1X5": ["Inherited templates can't be renamed here — rename it in the folder that owns it."],
     "jSY41h": ["\"", ["docName"], "\" took too long. Check your connection."],
     "jTLWxh": ["Embed an external page in an inline iframe (docs, demos, Figma, CodeSandbox)."],
     "jZ_E5M": ["Fetch failed — check the server logs for details."],
@@ -1470,6 +1483,7 @@
     "ky9Tuc": ["Edit ", ["0"], " source"],
     "l17ab4": ["Could not write project files. Try a different location."],
     "l1aQKz": ["Visual editor table"],
+    "l1l8sj": [["0"], "d ago"],
     "l3mSlL": ["Append-only timeline"],
     "l6OXqI": ["No installed agents found"],
     "l6zqhi": ["Branch switch failed — try opening the doc manually."],
@@ -1586,6 +1600,7 @@
     "opEayO": [
       "<0>.ok/</0>, <1>.mcp.json</1> (and per-editor variants), project skills, and <2>.claude/launch.json</2>. Switch later via Settings → Sharing or <3>ok sharing share|unshare</3>."
     ],
+    "optX0N": [["0"], "h ago"],
     "oqB2ez": ["Previous match"],
     "ot5BRK": ["Duplicate selected file or folder"],
     "otE4aj": ["Show external URL nodes"],
@@ -1628,6 +1643,7 @@
     "pzutoc": ["Italic"],
     "q2kXMG": ["Inline Math"],
     "q6-JVU": ["Loading pages"],
+    "q6IUff": ["Renaming moves the file on disk (a git mv) and changes the id agents use."],
     "q7zsRM": ["Couldn't save version — try again"],
     "qAQVSD": ["Page headings response was not JSON"],
     "qAhFeg": [
@@ -1698,6 +1714,7 @@
     "s-XOaI": ["File name"],
     "s1c0ja": ["Bullet List"],
     "s3caR3": ["Deleting"],
+    "s8XlGV": ["activity"],
     "sE7R19": [
       "Could not load templates: ",
       ["templatesError"],
@@ -1746,6 +1763,7 @@
     "tgWuMB": ["Modified"],
     "tiWX6q": ["Source editor"],
     "tjXez2": ["blog-post"],
+    "tp15x4": ["folder properties"],
     "u-9fWA": ["See <0>Architecture</0> for the system overview."],
     "u0iUdo": [
       "Chrome and the page use this to select text or page content. Open Knowledge only handles it when the Files sidebar has focus."
@@ -1924,6 +1942,7 @@
     "zaXlhf": [
       "The properties block at the top of this doc has a formatting error. Switch to source mode to fix it."
     ],
+    "zbymaY": [["0"], "m ago"],
     "zd00pH": ["Copy Path"],
     "zgSFyG": ["External link"],
     "zkWs-l": ["Sharing mode unchanged — see message below."],

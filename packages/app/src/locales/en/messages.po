@@ -121,6 +121,21 @@ msgstr "{0}/{1} — {2}"
 msgid "{0}/{1} {2}"
 msgstr "{0}/{1} {2}"
 
+#. placeholder {0}: Math.floor(diffSec / 86400)
+#: src/components/FolderTimelineCard.tsx
+msgid "{0}d ago"
+msgstr "{0}d ago"
+
+#. placeholder {0}: Math.floor(diffSec / 3600)
+#: src/components/FolderTimelineCard.tsx
+msgid "{0}h ago"
+msgstr "{0}h ago"
+
+#. placeholder {0}: Math.floor(diffSec / 60)
+#: src/components/FolderTimelineCard.tsx
+msgid "{0}m ago"
+msgstr "{0}m ago"
+
 #: src/components/SyncStatusBadge.tsx
 msgid "{ahead, plural, one {# commit ahead} other {# commits ahead}}"
 msgstr "{ahead, plural, one {# commit ahead} other {# commits ahead}}"
@@ -480,6 +495,14 @@ msgstr "Active"
 msgid "Active panel content for the selected tab shows here."
 msgstr "Active panel content for the selected tab shows here."
 
+#: src/components/FolderTimelineCard.tsx
+#~ msgid "activity"
+#~ msgstr "activity"
+
+#: src/components/FolderTimelineCard.tsx
+msgid "Activity"
+msgstr "Activity"
+
 #. Primary button that writes MCP config for the selected AI tools
 #: src/components/FrontmatterRow.tsx
 #: src/components/McpConsentDialogBody.tsx
@@ -660,6 +683,7 @@ msgstr "Authoritative content; mirrored verbatim everywhere it's referenced."
 msgid "Authorize in browser"
 msgstr "Authorize in browser"
 
+#: src/components/FolderTimelineCard.tsx
 #: src/components/TimelinePanel.tsx
 msgid "Auto-save"
 msgstr "Auto-save"
@@ -995,6 +1019,10 @@ msgstr "Claude Desktop"
 #: src/components/PageHeaderWidgets.tsx
 msgid "Clear {keyName}"
 msgstr "Clear {keyName}"
+
+#: src/components/FolderTimelineCard.tsx
+msgid "cleared folder properties"
+msgstr "cleared folder properties"
 
 #: src/components/EditorActivityPool.tsx
 msgid "Clearing local collaboration data for \"{docName}\" before reconnecting."
@@ -1659,9 +1687,17 @@ msgstr "Create template"
 msgid "Create your first file"
 msgstr "Create your first file"
 
+#: src/components/FolderTimelineCard.tsx
+msgid "created folder"
+msgstr "created folder"
+
 #: src/components/SeedDialog.tsx
 msgid "Created if missing; reused if it exists."
 msgstr "Created if missing; reused if it exists."
+
+#: src/components/FolderTimelineCard.tsx
+msgid "created template"
+msgstr "created template"
 
 #: src/components/CreateProjectDialog.tsx
 #: src/components/NewItemDialog.tsx
@@ -1747,6 +1783,10 @@ msgstr "Delete selected items"
 #: src/lib/keyboard-shortcuts.ts
 msgid "Delete selected table"
 msgstr "Delete selected table"
+
+#: src/components/FolderTimelineCard.tsx
+msgid "deleted template"
+msgstr "deleted template"
 
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/TrashFailureModal.tsx
@@ -1974,6 +2014,10 @@ msgstr "Edit wiki link"
 #: src/lib/keyboard-shortcuts.ts
 msgid "Edit with AI"
 msgstr "Edit with AI"
+
+#: src/components/FolderTimelineCard.tsx
+msgid "edited template"
+msgstr "edited template"
 
 #: src/presence/PresenceBar.tsx
 msgid "editing [[{realCurrentDoc}]]"
@@ -2437,6 +2481,10 @@ msgstr "Folder name"
 msgid "Folder name: {detail}"
 msgstr "Folder name: {detail}"
 
+#: src/components/FolderTimelineCard.tsx
+#~ msgid "folder properties"
+#~ msgstr "folder properties"
+
 #: src/components/FolderPropertiesCard.tsx
 msgid "Folder properties"
 msgstr "Folder properties"
@@ -2731,6 +2779,10 @@ msgstr "Inherited — set a value here to replace it."
 msgid "Inherited from {path}"
 msgstr "Inherited from {path}"
 
+#: src/components/TemplateForm.tsx
+msgid "Inherited templates can't be renamed here — rename it in the folder that owns it."
+msgstr "Inherited templates can't be renamed here — rename it in the folder that owns it."
+
 #: src/components/SeedDialog.tsx
 msgid "Initialize"
 msgstr "Initialize"
@@ -2860,6 +2912,7 @@ msgid "Jump to page {pageNumber}"
 msgstr "Jump to page {pageNumber}"
 
 #: src/components/FolderOverview.tsx
+#: src/components/FolderTimelineCard.tsx
 #: src/components/SyncStatusBadge.tsx
 #: src/components/TimelinePanel.tsx
 msgid "just now"
@@ -3236,6 +3289,10 @@ msgstr "Move to the previous visual-editor find result."
 #: src/editor/extensions/JsxComponentView.tsx
 msgid "Move up"
 msgstr "Move up"
+
+#: src/components/FolderTimelineCard.tsx
+msgid "moved template"
+msgstr "moved template"
 
 #: src/editor/slash-command/component-items.tsx
 msgid "Multi-page PDF viewer with toolbar controls (thumbnails, page nav, zoom)."
@@ -4516,6 +4573,14 @@ msgstr "Rename succeeded but the sidebar may be out of date — refresh to resyn
 msgid "Rename succeeded but the tabstrip may be out of date — refresh to resync"
 msgstr "Rename succeeded but the tabstrip may be out of date — refresh to resync"
 
+#: src/components/TemplateForm.tsx
+msgid "Renaming changes the file on disk and the id agents use to pick this template."
+msgstr "Renaming changes the file on disk and the id agents use to pick this template."
+
+#: src/components/TemplateForm.tsx
+#~ msgid "Renaming moves the file on disk (a git mv) and changes the id agents use."
+#~ msgstr "Renaming moves the file on disk (a git mv) and changes the id agents use."
+
 #: src/components/EditorActivityPool.tsx
 msgid "Reopening \"{docName}\" with a fresh local collaboration cache."
 msgstr "Reopening \"{docName}\" with a fresh local collaboration cache."
@@ -5383,6 +5448,10 @@ msgstr "Task list"
 msgid "Task List"
 msgstr "Task List"
 
+#: src/components/FolderTimelineCard.tsx
+#~ msgid "template"
+#~ msgstr "template"
+
 #: src/components/TemplateEditDialog.tsx
 msgid "Template"
 msgstr "Template"
@@ -5402,6 +5471,10 @@ msgstr "Template \"{trimmedTitle}\" created"
 #: src/components/empty-state/CreateView.tsx
 msgid "Template list"
 msgstr "Template list"
+
+#: src/components/TemplateForm.tsx
+msgid "Template renamed"
+msgstr "Template renamed"
 
 #: src/components/TemplateForm.tsx
 msgid "Template saved"
@@ -5770,6 +5843,10 @@ msgstr "Undone all edits on {docName}"
 msgid "Unified diff"
 msgstr "Unified diff"
 
+#: src/components/FolderTimelineCard.tsx
+msgid "Unknown"
+msgstr "Unknown"
+
 #: src/editor/extensions/JsxComponentView.tsx
 msgid "Unknown component: {componentName} — source editable below"
 msgstr "Unknown component: {componentName} — source editable below"
@@ -5806,6 +5883,10 @@ msgstr "Unrecognized wiki link"
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 msgid "Update the destination and optional section anchor."
 msgstr "Update the destination and optional section anchor."
+
+#: src/components/FolderTimelineCard.tsx
+msgid "updated folder properties"
+msgstr "updated folder properties"
 
 #: src/components/PageHeaderWidgets.tsx
 msgid "Upload {keyName}"

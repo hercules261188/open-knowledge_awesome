@@ -121,6 +121,21 @@ msgstr ""
 msgid "{0}/{1} {2}"
 msgstr ""
 
+#. placeholder {0}: Math.floor(diffSec / 86400)
+#: src/components/FolderTimelineCard.tsx
+msgid "{0}d ago"
+msgstr ""
+
+#. placeholder {0}: Math.floor(diffSec / 3600)
+#: src/components/FolderTimelineCard.tsx
+msgid "{0}h ago"
+msgstr ""
+
+#. placeholder {0}: Math.floor(diffSec / 60)
+#: src/components/FolderTimelineCard.tsx
+msgid "{0}m ago"
+msgstr ""
+
 #: src/components/SyncStatusBadge.tsx
 msgid "{ahead, plural, one {# commit ahead} other {# commits ahead}}"
 msgstr ""
@@ -475,6 +490,14 @@ msgstr ""
 msgid "Active panel content for the selected tab shows here."
 msgstr ""
 
+#: src/components/FolderTimelineCard.tsx
+#~ msgid "activity"
+#~ msgstr ""
+
+#: src/components/FolderTimelineCard.tsx
+msgid "Activity"
+msgstr ""
+
 #. Primary button that writes MCP config for the selected AI tools
 #: src/components/FrontmatterRow.tsx
 #: src/components/McpConsentDialogBody.tsx
@@ -655,6 +678,7 @@ msgstr ""
 msgid "Authorize in browser"
 msgstr ""
 
+#: src/components/FolderTimelineCard.tsx
 #: src/components/TimelinePanel.tsx
 msgid "Auto-save"
 msgstr ""
@@ -989,6 +1013,10 @@ msgstr ""
 
 #: src/components/PageHeaderWidgets.tsx
 msgid "Clear {keyName}"
+msgstr ""
+
+#: src/components/FolderTimelineCard.tsx
+msgid "cleared folder properties"
 msgstr ""
 
 #: src/components/EditorActivityPool.tsx
@@ -1654,8 +1682,16 @@ msgstr ""
 msgid "Create your first file"
 msgstr ""
 
+#: src/components/FolderTimelineCard.tsx
+msgid "created folder"
+msgstr ""
+
 #: src/components/SeedDialog.tsx
 msgid "Created if missing; reused if it exists."
+msgstr ""
+
+#: src/components/FolderTimelineCard.tsx
+msgid "created template"
 msgstr ""
 
 #: src/components/CreateProjectDialog.tsx
@@ -1741,6 +1777,10 @@ msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Delete selected table"
+msgstr ""
+
+#: src/components/FolderTimelineCard.tsx
+msgid "deleted template"
 msgstr ""
 
 #: src/components/DeleteConfirmationDialog.tsx
@@ -1968,6 +2008,10 @@ msgstr ""
 #: src/editor/bubble-menu/EditWithAiBubbleButton.tsx
 #: src/lib/keyboard-shortcuts.ts
 msgid "Edit with AI"
+msgstr ""
+
+#: src/components/FolderTimelineCard.tsx
+msgid "edited template"
 msgstr ""
 
 #: src/presence/PresenceBar.tsx
@@ -2432,6 +2476,10 @@ msgstr ""
 msgid "Folder name: {detail}"
 msgstr ""
 
+#: src/components/FolderTimelineCard.tsx
+#~ msgid "folder properties"
+#~ msgstr ""
+
 #: src/components/FolderPropertiesCard.tsx
 msgid "Folder properties"
 msgstr ""
@@ -2726,6 +2774,10 @@ msgstr ""
 msgid "Inherited from {path}"
 msgstr ""
 
+#: src/components/TemplateForm.tsx
+msgid "Inherited templates can't be renamed here — rename it in the folder that owns it."
+msgstr ""
+
 #: src/components/SeedDialog.tsx
 msgid "Initialize"
 msgstr ""
@@ -2855,6 +2907,7 @@ msgid "Jump to page {pageNumber}"
 msgstr ""
 
 #: src/components/FolderOverview.tsx
+#: src/components/FolderTimelineCard.tsx
 #: src/components/SyncStatusBadge.tsx
 #: src/components/TimelinePanel.tsx
 msgid "just now"
@@ -3230,6 +3283,10 @@ msgstr ""
 
 #: src/editor/extensions/JsxComponentView.tsx
 msgid "Move up"
+msgstr ""
+
+#: src/components/FolderTimelineCard.tsx
+msgid "moved template"
 msgstr ""
 
 #: src/editor/slash-command/component-items.tsx
@@ -4511,6 +4568,14 @@ msgstr ""
 msgid "Rename succeeded but the tabstrip may be out of date — refresh to resync"
 msgstr ""
 
+#: src/components/TemplateForm.tsx
+msgid "Renaming changes the file on disk and the id agents use to pick this template."
+msgstr ""
+
+#: src/components/TemplateForm.tsx
+#~ msgid "Renaming moves the file on disk (a git mv) and changes the id agents use."
+#~ msgstr ""
+
 #: src/components/EditorActivityPool.tsx
 msgid "Reopening \"{docName}\" with a fresh local collaboration cache."
 msgstr ""
@@ -5378,6 +5443,10 @@ msgstr ""
 msgid "Task List"
 msgstr ""
 
+#: src/components/FolderTimelineCard.tsx
+#~ msgid "template"
+#~ msgstr ""
+
 #: src/components/TemplateEditDialog.tsx
 msgid "Template"
 msgstr ""
@@ -5396,6 +5465,10 @@ msgstr ""
 
 #: src/components/empty-state/CreateView.tsx
 msgid "Template list"
+msgstr ""
+
+#: src/components/TemplateForm.tsx
+msgid "Template renamed"
 msgstr ""
 
 #: src/components/TemplateForm.tsx
@@ -5765,6 +5838,10 @@ msgstr ""
 msgid "Unified diff"
 msgstr ""
 
+#: src/components/FolderTimelineCard.tsx
+msgid "Unknown"
+msgstr ""
+
 #: src/editor/extensions/JsxComponentView.tsx
 msgid "Unknown component: {componentName} — source editable below"
 msgstr ""
@@ -5800,6 +5877,10 @@ msgstr ""
 
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 msgid "Update the destination and optional section anchor."
+msgstr ""
+
+#: src/components/FolderTimelineCard.tsx
+msgid "updated folder properties"
 msgstr ""
 
 #: src/components/PageHeaderWidgets.tsx
