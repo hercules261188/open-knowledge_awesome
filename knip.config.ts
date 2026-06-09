@@ -62,6 +62,7 @@ export default {
     'packages/server/src/share/git-context.ts': ['types'],
     'docs/src/app/d/[encoded]/opengraph-image.test.ts': ['files'],
     'docs/src/lib/share-splash.test.ts': ['files'],
+    'docs/src/middleware.test.ts': ['files'],
     'packages/server/src/git-preflight.ts': ['exports'],
     'packages/cli/src/commands/diagnose-health.ts': ['exports'],
     'packages/cli/src/commands/diagnose-health-checks/git.ts': ['exports'],
