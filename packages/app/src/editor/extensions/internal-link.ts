@@ -8,8 +8,8 @@ import {
 import { type Editor, mergeAttributes } from '@tiptap/core';
 import { createElement } from 'react';
 import { resolveLinkTargetIntent } from '../../components/link-target-intent';
-import { dispatchAssetClick } from '../asset-dispatch';
 import {
+  activateAssetLink,
   openHashHrefInNewTab,
   openInternalHashHrefInNewTab,
   toInternalHashHref,
@@ -85,12 +85,12 @@ export const InternalLink = LinkFidelity.extend<InternalLinkOptions>({
         ) {
           return false;
         }
-        void dispatchAssetClick({
+        activateAssetLink({
           url,
           projectRelPath,
           ext,
           title: projectRelPath.split('/').pop() ?? url,
-          forceOsDelegation: newTab,
+          newTab,
         });
         return true;
       }

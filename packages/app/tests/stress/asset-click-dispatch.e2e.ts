@@ -133,18 +133,48 @@ test.describe('asset-click dispatcher — P9 E2E scenarios (SPEC 2026-04-23)', (
     expect(openedPage).toBeNull();
   });
 
-  test('P9.10: hand-authored [spec](./file.pdf) click → dispatcher fires → new tab', async ({
+  test('P9.10: hand-authored [guide](./file.html) bare click → in-app asset preview (no new tab)', async ({
     page,
     api,
     context,
     workerServer,
   }) => {
-    writeFileSync(join(workerServer.contentDir, 'reference.pdf'), new Uint8Array(TINY_PDF_BYTES));
-
-    await api.replaceDoc(
-      docName,
-      `# Markdown link test\n\nSee [the spec](./reference.pdf) for details.\n`,
+    writeFileSync(
+      join(workerServer.contentDir, 'guide.html'),
+      '<!doctype html><meta charset="utf-8"><title>Guide</title><p>hi</p>',
     );
+
+    await api.replaceDoc(docName, `# Markdown link test\n\nSee [the guide](./guide.html).\n`);
+
+    await page.goto(`/#/${docName}`);
+    await waitForProvider(page);
+    await page.waitForSelector('.ProseMirror');
+    await expect(page.locator('[data-resolution-state="asset"]').first()).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.click('span[data-link]');
+
+    await expect
+      .poll(async () => page.evaluate(() => window.location.hash))
+      .toBe('#/__asset__/guide.html');
+    await expect(page.getByTestId('asset-preview-open-as-text')).toBeVisible({ timeout: 5_000 });
+
+    const openedPage = await context.waitForEvent('page', { timeout: 1_000 }).catch(() => null);
+    expect(openedPage).toBeNull();
+  });
+
+  test('P9.10b: Cmd/Ctrl+click on the same link is the OS-delegation escape hatch → new tab', async ({
+    page,
+    api,
+    context,
+    workerServer,
+  }) => {
+    writeFileSync(
+      join(workerServer.contentDir, 'guide.html'),
+      '<!doctype html><meta charset="utf-8"><title>Guide</title><p>hi</p>',
+    );
+    await api.replaceDoc(docName, `# Markdown link test\n\nSee [the guide](./guide.html).\n`);
 
     await page.goto(`/#/${docName}`);
     await waitForProvider(page);
@@ -164,7 +194,7 @@ test.describe('asset-click dispatcher — P9 E2E scenarios (SPEC 2026-04-23)', (
 
     const [newPage] = await Promise.all([
       context.waitForEvent('page', { timeout: 5_000 }),
-      page.click('span[data-link]'),
+      page.click('span[data-link]', { modifiers: ['Meta'] }),
     ]);
     await expect
       .poll(async () =>
@@ -172,7 +202,7 @@ test.describe('asset-click dispatcher — P9 E2E scenarios (SPEC 2026-04-23)', (
           return (window as typeof window & { __assetOpenCalls?: string[] }).__assetOpenCalls ?? [];
         }),
       )
-      .toContain('./reference.pdf');
+      .toContain('./guide.html');
     await newPage.close();
   });
 
