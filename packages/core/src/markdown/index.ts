@@ -952,6 +952,7 @@ function buildMdastToPmHandlers(
     type: 'rawMdxFallbackMdast';
     originalType: string;
     value: string;
+    unresolvedPosition?: boolean;
     position?: { start: { offset: number }; end: { offset: number } };
   }) => {
     if (!n.rawMdxFallback) return null;
@@ -966,6 +967,7 @@ function buildMdastToPmHandlers(
         event: 'unknown-mdast-type',
         type: node.originalType,
         reason: `Unhandled mdast: ${node.originalType}`,
+        unresolvedPosition: node.unresolvedPosition ?? false,
       }),
     );
     return n.rawMdxFallback.createAndFill(
