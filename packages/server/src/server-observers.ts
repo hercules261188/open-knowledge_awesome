@@ -27,11 +27,12 @@ import {
   incrementBridgeMergeContentLoss,
   incrementBridgeSplitBrainRederives,
   incrementObserverAPathBFires,
+  incrementObserverAResidualMergeRuns,
   incrementServerObserverError,
   incrementServerObserverFire,
 } from './metrics.ts';
 import { type ShadowHandle, saveInMemoryCheckpoint } from './shadow-repo.ts';
-import { withSpanSync } from './telemetry.ts';
+import { setActiveSpanAttributes, withSpanSync } from './telemetry.ts';
 
 
 export const OBSERVER_SYNC_ORIGIN = {
@@ -47,7 +48,7 @@ export type PairedWriteOrigin = LocalTransactionOrigin & {
   };
 };
 
-export const isPairedWriteOrigin = (origin: unknown): boolean => {
+export const isPairedWriteOrigin = (origin: unknown): origin is PairedWriteOrigin => {
   if (origin == null || typeof origin !== 'object') return false;
   const ctx = (origin as { context?: { paired?: boolean } }).context;
   return ctx?.paired === true;
@@ -157,9 +158,39 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     }
   };
 
-  let lastSyncedXmlMd = '';
+  let lastSyncedCanonicalMd = '';
+  let lastSyncedYTextBytes = '';
+  let canonicalWitnessCoherent = false;
   let xmlDirty = false;
   let textDirty = false;
+
+  const refreshYTextWitness = (): void => {
+    lastSyncedYTextBytes = ytext.toString();
+    canonicalWitnessCoherent = false;
+  };
+
+  const recordSettledBaselines = (canonicalMd: string): void => {
+    lastSyncedCanonicalMd = canonicalMd;
+    refreshYTextWitness();
+    canonicalWitnessCoherent = canonicalMd !== '';
+  };
+
+  const recordDivergedAttachBaselines = (canonicalMd: string): void => {
+    lastSyncedCanonicalMd = canonicalMd;
+    lastSyncedYTextBytes = canonicalMd;
+    canonicalWitnessCoherent = false;
+  };
+
+  const refreshCanonicalWitnessOnly = (canonicalMd: string): void => {
+    lastSyncedCanonicalMd = canonicalMd;
+    canonicalWitnessCoherent = false;
+  };
+
+  const recordSplitBrainRecoveryBaselines = (canonicalMd: string): void => {
+    lastSyncedCanonicalMd = canonicalMd;
+    lastSyncedYTextBytes = ytext.toString();
+    canonicalWitnessCoherent = true;
+  };
 
   const readCurrentFm = (): string => stripFrontmatter(ytext.toString()).frontmatter;
 
@@ -167,14 +198,30 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     const initialJson = yXmlFragmentToProseMirrorRootNode(xmlFragment, schema).toJSON();
     const initialBody = mdManager.serialize(initialJson);
     const initialFrontmatter = readCurrentFm();
-    lastSyncedXmlMd = prependFrontmatter(initialFrontmatter, initialBody);
+    const canonicalInit = prependFrontmatter(initialFrontmatter, initialBody);
+    const initParseOpts =
+      opts.resolveEmbed && opts.docName
+        ? {
+            resolveEmbed: opts.resolveEmbed,
+            resolveSize: opts.resolveSize,
+            sourcePath: opts.docName,
+          }
+        : undefined;
+    const ytextCanonicalBody = mdManager.serialize(
+      mdManager.parseWithFallback(stripFrontmatter(ytext.toString()).body, initParseOpts),
+    );
+    if (ytextCanonicalBody === initialBody) {
+      recordSettledBaselines(canonicalInit);
+    } else {
+      recordDivergedAttachBaselines(canonicalInit);
+    }
   } catch (err) {
     incrementServerObserverError('a');
     console.warn(
       '[Server Observer A] Baseline init failed — starting from empty snapshot:',
       err instanceof Error ? err.message : String(err),
     );
-    lastSyncedXmlMd = '';
+    recordSettledBaselines('');
   }
 
   const runObserverASyncImpl = (): void => {
@@ -184,10 +231,14 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       const frontmatter = readCurrentFm();
       const md = prependFrontmatter(frontmatter, body);
 
-      if (lastSyncedXmlMd === md) {
+      if (canonicalWitnessCoherent && lastSyncedCanonicalMd === md) {
         if (settlesSplitBrain(ytext.toString(), md)) {
+          recordDivergedAttachBaselines(md);
           textDirty = true;
           recordSplitBrainRederive('identity-gate');
+          setActiveSpanAttributes({ 'observer.a.path': 'gated-fragment-unchanged-rederive' });
+        } else {
+          setActiveSpanAttributes({ 'observer.a.path': 'gated-fragment-unchanged' });
         }
         return;
       }
@@ -195,18 +246,32 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       const currentText = ytext.toString();
 
       if (normalizeBridge(currentText) === normalizeBridge(md)) {
-        lastSyncedXmlMd = md;
+        setActiveSpanAttributes({ 'observer.a.path': 'gated-in-sync' });
+        recordSettledBaselines(md);
         return;
       }
 
-      const preMergeBaseline = lastSyncedXmlMd;
+      const preMergeBaseline = lastSyncedYTextBytes;
+      const ytextInSync = currentText === lastSyncedYTextBytes;
+      const residualInTolerance =
+        lastSyncedYTextBytes === lastSyncedCanonicalMd ||
+        normalizeBridge(lastSyncedYTextBytes) === normalizeBridge(lastSyncedCanonicalMd);
+      const residualMergeEligible = canonicalWitnessCoherent && !residualInTolerance;
+      setActiveSpanAttributes({
+        'observer.a.path': ytextInSync
+          ? residualMergeEligible
+            ? 'residual-merge'
+            : 'path-a'
+          : 'path-b',
+      });
       const pathBState: { mergedText: string | null } = { mergedText: null };
       doc.transact(() => {
-        if (currentText === lastSyncedXmlMd) {
+        if (ytextInSync && !residualMergeEligible) {
           applyIncrementalDiff(ytext, currentText, md);
         } else {
+          const mergeBase = ytextInSync ? lastSyncedCanonicalMd : preMergeBaseline;
           try {
-            const mergedText = mergeThreeWay(lastSyncedXmlMd, md, currentText);
+            const mergedText = mergeThreeWay(mergeBase, md, currentText);
             applyFastDiff(ytext, currentText, mergedText);
             pathBState.mergedText = mergedText;
           } catch (mergeErr) {
@@ -219,7 +284,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
         }
       }, OBSERVER_SYNC_ORIGIN);
 
-      if (pathBState.mergedText !== null) {
+      if (pathBState.mergedText !== null && !ytextInSync) {
         if (emitObserverAPathBFired(opts.docName)) {
           incrementObserverAPathBFires();
           console.warn(
@@ -227,23 +292,28 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
               event: 'observer-a-path-b-fired',
               'doc.name': opts.docName ?? null,
               xmlFragmentAdvanced: true,
-              ytextDiverged: true,
+              ytextDiverged: !ytextInSync,
               mergeBytesChanged: Math.abs(pathBState.mergedText.length - currentText.length),
             }),
           );
         }
       }
 
+      if (pathBState.mergedText !== null && ytextInSync) {
+        incrementObserverAResidualMergeRuns();
+      }
+
       incrementServerObserverFire('a');
-      const settledText = ytext.toString();
-      if (settlesSplitBrain(settledText, md)) {
-        lastSyncedXmlMd = md;
+      recordSettledBaselines(md);
+
+      if (settlesSplitBrain(ytext.toString(), md)) {
         textDirty = true;
         recordSplitBrainRederive('post-merge');
-      } else {
-        lastSyncedXmlMd = settledText;
       }
     } catch (err) {
+      if (err instanceof BridgeMergeContentLossError) {
+        throw err;
+      }
       incrementServerObserverError('a');
       console.error('[Server Observer A] Failed to sync tree→text:', err);
       try {
@@ -251,11 +321,11 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
         const recoveryBody = mdManager.serialize(recoveryJson);
         const recoveryMd = prependFrontmatter(readCurrentFm(), recoveryBody);
         if (settlesSplitBrain(ytext.toString(), recoveryMd)) {
-          lastSyncedXmlMd = recoveryMd;
+          recordSplitBrainRecoveryBaselines(recoveryMd);
           textDirty = true;
           recordSplitBrainRederive('error-recovery');
         } else {
-          lastSyncedXmlMd = ytext.toString();
+          recordSettledBaselines(recoveryMd);
         }
       } catch (innerErr) {
         console.warn(
@@ -266,7 +336,9 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
             recoveryError: innerErr instanceof Error ? innerErr.message : String(innerErr),
           }),
         );
-        lastSyncedXmlMd = '';
+        lastSyncedCanonicalMd = '';
+        lastSyncedYTextBytes = '';
+        canonicalWitnessCoherent = false;
       }
     }
   };
@@ -285,7 +357,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     if (isPairedWriteOrigin(transaction.origin)) {
       try {
         const frontmatter = readCurrentFm();
-        lastSyncedXmlMd = ytext.toString();
+        refreshYTextWitness();
         priorFmForTelemetry = frontmatter;
       } catch (err) {
         incrementServerObserverError('a');
@@ -310,11 +382,11 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       doc.transact(() => {
         ytext.insert(0, md);
       }, OBSERVER_SYNC_ORIGIN);
-      lastSyncedXmlMd = md;
+      recordSettledBaselines(md);
     } catch (err) {
       incrementServerObserverError('a');
       console.error('[Server Observer A] Failed initial sync:', err);
-      lastSyncedXmlMd = '';
+      recordSettledBaselines('');
     }
   }
 
@@ -325,7 +397,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
       const md = ytext.toString();
       const { frontmatter, body } = stripFrontmatter(md);
 
-      if (normalizeBridge(lastSyncedXmlMd) === normalizeBridge(md)) {
+      if (normalizeBridge(lastSyncedYTextBytes) === normalizeBridge(md)) {
         if (priorFmForTelemetry !== frontmatter) {
           recordFrontmatterEditSurface('source-mode');
           priorFmForTelemetry = frontmatter;
@@ -364,7 +436,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
           site: 'observer-b',
           docName: opts.docName,
         });
-        lastSyncedXmlMd = canonicalYText;
+        recordSettledBaselines(canonicalYText);
       } catch (reserializeErr) {
         if (reserializeErr instanceof BridgeInvariantViolationError) {
           throw reserializeErr;
@@ -373,7 +445,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
           '[Server Observer B] Post-sync re-serialization failed — using input body as baseline:',
           reserializeErr,
         );
-        lastSyncedXmlMd = prependFrontmatter(frontmatter, body);
+        recordSettledBaselines(prependFrontmatter(frontmatter, body));
       }
     } catch (err) {
       if (err instanceof BridgeInvariantViolationError) {
@@ -385,7 +457,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
         const postJson = yXmlFragmentToProseMirrorRootNode(xmlFragment, schema).toJSON();
         const postBody = mdManager.serialize(postJson);
         const fm = readCurrentFm();
-        lastSyncedXmlMd = prependFrontmatter(fm, postBody);
+        refreshCanonicalWitnessOnly(prependFrontmatter(fm, postBody));
       } catch (innerErr) {
         if (innerErr instanceof BridgeInvariantViolationError) {
           throw innerErr;
@@ -409,7 +481,7 @@ export function setupServerObservers(opts: SetupServerObserversOpts): () => void
     if (isPairedWriteOrigin(transaction.origin)) {
       try {
         const frontmatter = readCurrentFm();
-        lastSyncedXmlMd = ytext.toString();
+        refreshYTextWitness();
         priorFmForTelemetry = frontmatter;
       } catch (err) {
         incrementServerObserverError('b');

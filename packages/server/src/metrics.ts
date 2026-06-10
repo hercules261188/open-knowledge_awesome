@@ -160,6 +160,17 @@ export interface ReconciliationMetrics {
    *  Path-B rate via `actual_rate = observerAPathBFires +
    *  observerAPathBFiresSuppressed`. */
   observerAPathBFiresSuppressed: number;
+  /** Y.Text-is-truth contract — count of Observer A in-sync canonical-base
+   *  residual merges: the byte-preserving slow path on docs whose settled
+   *  bytes sit beyond `normalizeBridge` tolerance of the canonical witness.
+   *  NOT a Path B fire — `observerAPathBFires`/`...Suppressed` stay scoped
+   *  to real divergence. Increments on every run with no rate-limiter
+   *  (there is no per-fire console event to flood), so growth on every
+   *  WYSIWYG-edit drain of a beyond-tolerance doc is expected — this is the
+   *  "merge machinery is hot on this doc class" volume signal operators
+   *  need when triaging editor latency, which the divergence-scoped Path B
+   *  counters deliberately exclude. */
+  observerAResidualMergeRuns: number;
   /** Y.Text-is-truth contract (precedent #38) — count of Observer A
    *  settlement checks that detected a drain settling split-brain (Y.Text
    *  vs serialize(fragment) divergence beyond `normalizeBridge` tolerance)
@@ -337,6 +348,7 @@ const counters: ReconciliationMetrics = {
   bridgeToleranceApplied: {},
   observerAPathBFires: 0,
   observerAPathBFiresSuppressed: 0,
+  observerAResidualMergeRuns: 0,
   bridgeSplitBrainRederives: 0,
   bridgeSplitBrainRederivesSuppressed: 0,
   persistenceReconciliationFailures: 0,
@@ -466,6 +478,10 @@ export function incrementObserverAPathBFires(): void {
 
 export function incrementObserverAPathBFiresSuppressed(): void {
   counters.observerAPathBFiresSuppressed++;
+}
+
+export function incrementObserverAResidualMergeRuns(): void {
+  counters.observerAResidualMergeRuns++;
 }
 
 export function incrementBridgeSplitBrainRederives(): void {
@@ -603,6 +619,7 @@ export function resetMetrics(): void {
   counters.bridgeToleranceApplied = {};
   counters.observerAPathBFires = 0;
   counters.observerAPathBFiresSuppressed = 0;
+  counters.observerAResidualMergeRuns = 0;
   counters.bridgeSplitBrainRederives = 0;
   counters.bridgeSplitBrainRederivesSuppressed = 0;
   counters.persistenceReconciliationFailures = 0;
