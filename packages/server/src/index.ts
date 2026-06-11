@@ -45,6 +45,7 @@ export {
   parseAuthRejectionWire,
   parseHocuspocusAuthToken,
 } from './auth-token-schema.ts';
+export { AutoStartDisabledError } from './autostart.ts';
 export {
   type BacklinkEntry,
   BacklinkIndex,

@@ -54,7 +54,7 @@ The user watches your edits land in a live browser preview. Open it once at sess
 
 Warnings fire at most once per session in the fresh-start case.
 
-**\`previewUrl: null\` only means "no UI reachable" on the two attach-warning tools: \`write\` / \`edit\`.** Workflow tools return prose and don't carry \`previewUrl\`. \`delete\` / \`move\` emit \`previousPreviewUrl\` (different field, for closing stale tabs) and don't fire attach warnings. \`preview_url\` reports \`running: false\` + \`url: null\` when no UI is running.
+**\`previewUrl: null\` only means "no UI reachable" on the two attach-warning tools: \`write\` / \`edit\`.** Workflow tools return prose and don't carry \`previewUrl\`. \`delete\` / \`move\` emit \`previousPreviewUrl\` (different field, for closing stale tabs) and don't fire attach warnings. \`preview_url\` auto-starts the backend on demand (same \`OK_MCP_AUTOSTART\` gate as writes; a cold first call can take seconds) and reports \`running: false\` + \`url: null\` only when no UI could be reached — its hint names the right command.
 
 If you see \`"Hocuspocus server is not running"\`, run \`ok start\` and retry.
 
@@ -71,6 +71,8 @@ Open Knowledge looks for documents under the resolved \`content.dir\` (discovera
 Default mental model (no jargon): **every \`.md\` and \`.mdx\` under \`content.dir\`** not excluded by \`.gitignore\` or \`.okignore\` is an Open Knowledge document — including under \`specs/\`, \`reports/\`, \`docs/\`, etc. Read \`.okignore\` (and any nested \`.okignore\` files) once per turn to know what's excluded.
 
 **First session in this project?** If substantial folders have no frontmatter of their own and no \`templates_available\`, the project isn't onboarded — invoke \`workflow({ kind: 'discover' })\` before writing.
+
+**Working in a git worktree?** Pass the worktree's absolute path as \`cwd\` on your OK tool calls once — it sticks for the rest of the session, so reads, writes, and the preview all target that worktree instead of the main checkout. If a tool warns that it routed to the main checkout while you're in a worktree, passing \`cwd\` once is the fix.
 
 
 Full guidance lives in the bundled \`open-knowledge\` skill at \`~/.ok/skills/open-knowledge/SKILL.md\`.

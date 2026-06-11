@@ -165,6 +165,7 @@ export function registerAllTools(server: ServerInstance, opts: RegisterAllToolsO
   registerPreviewUrl(registrationServer, {
     config: opts.config,
     resolveCwd: named('preview_url'),
+    serverUrl: opts.serverUrl,
   });
   registerConflicts(registrationServer, {
     serverUrl: opts.serverUrl,

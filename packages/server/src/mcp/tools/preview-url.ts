@@ -97,6 +97,19 @@ export function resolveUiInfo(ctx: PreviewUrlContext): UiInfo {
   return { baseUrl: null };
 }
 
+export async function awaitUiBaseUrl(
+  ctx: PreviewUrlContext,
+  opts: { timeoutMs: number; pollIntervalMs: number },
+): Promise<string | null> {
+  const deadline = Date.now() + opts.timeoutMs;
+  while (true) {
+    const { baseUrl } = resolveUiInfo(ctx);
+    if (baseUrl !== null) return baseUrl;
+    if (Date.now() >= deadline) return null;
+    await new Promise<void>((resolveSleep) => setTimeout(resolveSleep, opts.pollIntervalMs));
+  }
+}
+
 export async function buildListResolver(
   deps: PreviewUrlDeps,
   cwd?: string,

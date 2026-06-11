@@ -202,7 +202,10 @@ export type ServerUrlOrResolver =
   | undefined
   | ((cwd?: string) => Promise<string | undefined>);
 
-async function resolveServerUrl(x: ServerUrlOrResolver, cwd?: string): Promise<string | undefined> {
+export async function resolveServerUrl(
+  x: ServerUrlOrResolver,
+  cwd?: string,
+): Promise<string | undefined> {
   return typeof x === 'function' ? await x(cwd) : x;
 }
 
