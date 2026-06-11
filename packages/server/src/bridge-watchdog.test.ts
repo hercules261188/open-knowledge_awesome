@@ -1,4 +1,3 @@
-
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { BridgeInvariantViolationError } from '@inkeep/open-knowledge-core';
 import {
@@ -27,7 +26,6 @@ afterEach(() => {
 });
 
 describe('shouldThrowOnBridgeInvariantViolation (affirmative gate polarity)', () => {
-
   test('undefined NODE_ENV does not throw (Bun production default)', () => {
     expect(shouldThrowOnBridgeInvariantViolation({} as NodeJS.ProcessEnv)).toBe(false);
   });
@@ -367,7 +365,6 @@ describe('shouldEmitBridgeInvariantViolation — gate semantics', () => {
 });
 
 describe('shouldEmitObserverAPathBFired — per-doc rate-limiter', () => {
-
   test('first call for a doc returns true', () => {
     expect(shouldEmitObserverAPathBFired('doc-1', 1000)).toBe(true);
   });
@@ -413,7 +410,6 @@ describe('shouldEmitObserverAPathBFired — per-doc rate-limiter', () => {
 });
 
 describe('shouldEmitBridgeSplitBrainRederive — per-(site, doc) rate-limiter', () => {
-
   test('first call for a (site, doc) tuple returns true', () => {
     expect(shouldEmitBridgeSplitBrainRederive('post-merge', 'doc-1', 1000)).toBe(true);
   });
@@ -548,7 +544,6 @@ describe('bridge-invariant-violation payload redaction (OK_TELEMETRY_VERBOSE opt
 });
 
 describe('bridge-tolerance-applied event (FR-41)', () => {
-
   function captureWarn(fn: () => void): string[] {
     const originalWarn = console.warn;
     const warnings: string[] = [];
@@ -705,7 +700,6 @@ describe('shouldEmitBridgeToleranceApplied — gate semantics', () => {
 });
 
 describe('shouldEmitBridgeInvariantViolation — lazy prune of past-window entries', () => {
-
   test('grows linearly below the prune threshold', () => {
     for (let i = 0; i < 1023; i++) {
       shouldEmitBridgeInvariantViolation('observer-b', `doc-${i}`, 0);
@@ -755,7 +749,6 @@ describe('shouldEmitBridgeInvariantViolation — lazy prune of past-window entri
 });
 
 describe('shouldEmitBridgeSplitBrainRederive — lazy prune of past-window entries', () => {
-
   test('grows linearly below the prune threshold', () => {
     for (let i = 0; i < 1023; i++) {
       shouldEmitBridgeSplitBrainRederive('post-merge', `doc-${i}`, 0);
@@ -812,7 +805,6 @@ describe('shouldEmitBridgeSplitBrainRederive — lazy prune of past-window entri
 });
 
 describe('assertBridgeInvariant — return value reflects normalize-equality', () => {
-
   test('byte-equal inputs return true', () => {
     expect(assertBridgeInvariant('# Hello\n', '# Hello\n', { site: 'observer-b' })).toBe(true);
   });

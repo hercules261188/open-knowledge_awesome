@@ -31,8 +31,7 @@ export function initToleranceTelemetryWriter(projectDir: string): void {
     });
     try {
       appendFileSync(logPath, `${line}\n`);
-    } catch {
-    }
+    } catch {}
   });
 }
 

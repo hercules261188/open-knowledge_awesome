@@ -80,19 +80,6 @@ export function nextAvailableTabId(tabs: readonly string[], tabId: string): stri
   return nextTabId;
 }
 
-export function findOpenTabTarget(tabs: readonly string[], tabId: string): string | null {
-  const canonicalTabId = baseTabId(tabId);
-  return (
-    normalizeOpenTabs(tabs, Number.MAX_SAFE_INTEGER).find(
-      (openTabId) => baseTabId(openTabId) === canonicalTabId,
-    ) ?? null
-  );
-}
-
-export function sameTabTarget(firstTabId: string, secondTabId: string): boolean {
-  return baseTabId(firstTabId) === baseTabId(secondTabId);
-}
-
 export function folderTabId(folderPath: string): string {
   return `${FOLDER_TAB_PREFIX}${folderPath}`;
 }
@@ -310,14 +297,6 @@ export function openTab(
     return {
       tabs: addOpenTab(normalized, canonicalTabId, limit, pinnedTabIds),
       activeTabId: canonicalTabId,
-    };
-  }
-
-  const existingTabId = findOpenTabTarget(normalized, canonicalTabId);
-  if (existingTabId) {
-    return {
-      tabs: normalized,
-      activeTabId: existingTabId,
     };
   }
 

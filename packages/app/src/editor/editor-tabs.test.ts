@@ -9,7 +9,6 @@ import {
   docTabId,
   filterClosableTabIds,
   filterOpenTabsForKnownTargets,
-  findOpenTabTarget,
   folderTabId,
   localTabSessionStorageKey,
   nextActiveTabAfterClose,
@@ -29,7 +28,6 @@ import {
   removeOpenTab,
   removePinnedTab,
   replaceOpenTab,
-  sameTabTarget,
   tabIdForNavigationTarget,
   tabParts,
   writeLocalTabSessionState,
@@ -201,7 +199,7 @@ describe('editor tab state', () => {
     });
   });
 
-  test('openDocTab focuses the existing tab when replace-active targets an already-open doc', () => {
+  test('openDocTab replaces the active tab with a duplicate when targeting an already-open doc', () => {
     expect(
       openDocTab(['foo.md', 'bar.md'], 'foo.md', {
         behavior: 'replace-active',
@@ -209,8 +207,8 @@ describe('editor tab state', () => {
         limit: 10,
       }),
     ).toEqual({
-      tabs: ['foo.md', 'bar.md'],
-      activeTabId: 'foo.md',
+      tabs: ['foo.md', 'foo.md\u0000doc-tab:1'],
+      activeTabId: 'foo.md\u0000doc-tab:1',
     });
   });
 
@@ -227,7 +225,7 @@ describe('editor tab state', () => {
     });
   });
 
-  test('openDocTab focuses an existing duplicate instance instead of minting another one', () => {
+  test('openDocTab mints the next duplicate instance when earlier duplicates already exist', () => {
     const duplicateFooTab1 = 'foo.md\u0000doc-tab:1';
 
     expect(
@@ -237,8 +235,8 @@ describe('editor tab state', () => {
         limit: 10,
       }),
     ).toEqual({
-      tabs: ['foo.md', duplicateFooTab1, 'bar.md'],
-      activeTabId: 'foo.md',
+      tabs: ['foo.md', duplicateFooTab1, 'foo.md\u0000doc-tab:2'],
+      activeTabId: 'foo.md\u0000doc-tab:2',
     });
   });
 
@@ -258,23 +256,6 @@ describe('editor tab state', () => {
     );
   });
 
-  test('findOpenTabTarget returns an existing duplicate tab for a canonical target', () => {
-    const folder = folderTabId('docs');
-    const duplicateFolder = `${folder}\u0000doc-tab:1`;
-
-    expect(findOpenTabTarget([duplicateFolder], folder)).toBe(duplicateFolder);
-    expect(findOpenTabTarget(['other'], folder)).toBeNull();
-  });
-
-  test('sameTabTarget matches duplicate ids against their canonical target', () => {
-    const folder = folderTabId('docs');
-    const duplicateFolder = `${folder}\u0000doc-tab:1`;
-    const asset = assetTabId('docs/photo.png');
-
-    expect(sameTabTarget(duplicateFolder, folder)).toBe(true);
-    expect(sameTabTarget(duplicateFolder, asset)).toBe(false);
-  });
-
   test('openDocTab append preserves an active duplicate tab for the same document', () => {
     const duplicateFooTab = 'foo.md\u0000doc-tab:1';
 
@@ -290,7 +271,7 @@ describe('editor tab state', () => {
     });
   });
 
-  test('openTab focuses the existing folder tab when replace-active targets an already-open folder', () => {
+  test('openTab replaces the active tab with a duplicate when targeting an already-open folder', () => {
     const folder = folderTabId('docs');
 
     expect(
@@ -300,12 +281,12 @@ describe('editor tab state', () => {
         limit: 10,
       }),
     ).toEqual({
-      tabs: [folder, 'bar.md'],
-      activeTabId: folder,
+      tabs: [folder, `${folder}\u0000doc-tab:1`],
+      activeTabId: `${folder}\u0000doc-tab:1`,
     });
   });
 
-  test('openTab focuses the existing asset tab when a blank tab targets the same asset', () => {
+  test('openTab adds a duplicate asset tab when a blank tab targets an already-open asset', () => {
     const asset = assetTabId('docs/photo.png');
 
     expect(
@@ -315,8 +296,8 @@ describe('editor tab state', () => {
         limit: 10,
       }),
     ).toEqual({
-      tabs: [asset],
-      activeTabId: asset,
+      tabs: [asset, `${asset}\u0000doc-tab:1`],
+      activeTabId: `${asset}\u0000doc-tab:1`,
     });
   });
 
@@ -810,7 +791,6 @@ describe('applyDragPinMutation — drag-mutable pin state', () => {
 });
 
 describe('tabParts — non-`.md` call-site shapes (folder + asset)', () => {
-
   test('folder shape: docExt `/` produces baseName-with-trailing-slash label', () => {
     expect(tabParts('docs/guides', '/')).toEqual({
       baseName: 'guides',

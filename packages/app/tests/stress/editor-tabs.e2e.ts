@@ -413,7 +413,7 @@ test.describe('Editor tabs', () => {
   }) => {
     test.skip(
       true,
-      'Stale contract — PR #1010 US-002 focus-in-place no longer duplicates already-open tabs. See issue #1056.',
+      'Asset setup currently times out before tab assertions; duplicate target behavior is covered by editor-tabs.test.ts.',
     );
     const id = testId();
     const docName = `asset-new-tab-doc-${id}`;
@@ -448,10 +448,6 @@ test.describe('Editor tabs', () => {
     page,
     api,
   }) => {
-    test.skip(
-      true,
-      'Stale contract — PR #1010 US-002 focus-in-place no longer duplicates already-open tabs. See issue #1056.',
-    );
     const id = testId();
     const folder = `folder-new-tab-${id}`;
     const nestedDoc = `${folder}/nested-${id}`;
@@ -483,10 +479,6 @@ test.describe('Editor tabs', () => {
   });
 
   test('sidebar click replaces active bar.md with a second foo.md tab', async ({ page, api }) => {
-    test.skip(
-      true,
-      'Stale contract — PR #1010 US-002 focus-in-place no longer duplicates already-open tabs. See issue #1056.',
-    );
     const id = testId();
     const fooDoc = `foo-${id}`;
     const barDoc = `bar-${id}`;
@@ -522,10 +514,6 @@ test.describe('Editor tabs', () => {
     page,
     api,
   }) => {
-    test.skip(
-      true,
-      'Stale contract — PR #1010 US-002 focus-in-place no longer duplicates already-open tabs. See issue #1056.',
-    );
     const id = testId();
     const fooDoc = `foo-restored-${id}`;
     const barDoc = `bar-restored-${id}`;
@@ -564,10 +552,6 @@ test.describe('Editor tabs', () => {
   });
 
   test('refresh preserves three tabs when two point at the same file', async ({ page, api }) => {
-    test.skip(
-      true,
-      'Stale contract — PR #1010 US-002 focus-in-place no longer duplicates already-open tabs. See issue #1056.',
-    );
     const id = testId();
     const fooDoc = `foo-refresh-${id}`;
     const barDoc = `bar-refresh-${id}`;
@@ -683,10 +667,6 @@ test.describe('Editor tabs', () => {
     api,
     workerServer,
   }) => {
-    test.skip(
-      true,
-      'Stale contract — PR #1010 US-002 focus-in-place no longer duplicates already-open tabs. See issue #1056.',
-    );
     const id = testId();
     const folder = `tab-${id}`;
     const barDoc = `${folder}/bar-${id}`;

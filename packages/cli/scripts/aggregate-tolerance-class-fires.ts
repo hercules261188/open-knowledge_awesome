@@ -38,8 +38,7 @@ function main(): void {
       if (parsed.event === 'bridge-tolerance-fire') {
         records.push(parsed);
       }
-    } catch {
-    }
+    } catch {}
   }
 
   if (records.length === 0) {

@@ -26,6 +26,7 @@ import { OUTLINE_NAV_EVENT, type OutlineNavDetail } from '@/components/OutlinePa
 import { anchorFromHash } from '@/lib/doc-hash';
 import { mark } from '@/lib/perf';
 import { wrapExtensionsWithTiming } from '@/lib/perf/cold-mount-instrumentation';
+import type { SidebarDragPayload } from '@/lib/sidebar-drag';
 import { useIdentity } from '../presence/identity';
 import { registerEditor, unregisterEditor } from './active-editor';
 import { buildAwarenessUser } from './awareness-user';
@@ -50,6 +51,7 @@ import {
   SELECTION_STATS_DEBOUNCE_MS,
   selectionStatsFromWysiwyg,
 } from './selection-stats';
+import { createSidebarAwareHandleDrop, openSidebarDropPayload } from './sidebar-drop';
 import { TableCellHandles } from './table-controls/TableCellHandles';
 import { attachTypingBurstDetector } from './typing-burst-detector';
 import { getEditorView } from './utils/get-editor-view';
@@ -120,6 +122,7 @@ interface BuildEditorOptionsArgs {
   ctorStart: number;
   prebuiltMapping?: ProsemirrorMapping;
   onWedged?: (detail: WedgeDetail) => void;
+  onSidebarDrop?: (payload: SidebarDragPayload) => void;
 }
 
 interface PrewarmBoundCollaboration {
@@ -235,7 +238,7 @@ function buildEditorOptions(args: BuildEditorOptionsArgs): Partial<EditorOptions
       clipboardTextSerializer: (slice, view) => clipboard.text(slice, view),
       clipboardSerializer: clipboard.html.serializer,
       handlePaste: (view, event) => clipboard.paste(view, event),
-      handleDrop: (view, event) => clipboard.drop(view, event as DragEvent),
+      handleDrop: createSidebarAwareHandleDrop(clipboard.drop, args.onSidebarDrop),
     },
     extensions: wrapExtensionsWithTiming(buildExtensionList(args)),
   };
@@ -247,6 +250,7 @@ interface BuildPatternDConstructorOptionsArgs {
   clipboard: ClipboardState;
   ctorStart: number;
   onWedged?: (detail: WedgeDetail) => void;
+  onSidebarDrop?: (payload: SidebarDragPayload) => void;
 }
 
 type PatternDConstructorOptions = Partial<EditorOptions> & { element: null };
@@ -254,7 +258,7 @@ type PatternDConstructorOptions = Partial<EditorOptions> & { element: null };
 export function buildPatternDConstructorOptions(
   args: BuildPatternDConstructorOptionsArgs,
 ): PatternDConstructorOptions {
-  const { provider, placeholder, clipboard, ctorStart, onWedged } = args;
+  const { provider, placeholder, clipboard, ctorStart, onWedged, onSidebarDrop } = args;
   const fragment = provider.document.getXmlFragment('default');
   const prebuiltMapping: ProsemirrorMapping = new Map();
   const baseOptions = buildEditorOptions({
@@ -264,6 +268,7 @@ export function buildPatternDConstructorOptions(
     ctorStart,
     prebuiltMapping,
     onWedged,
+    onSidebarDrop,
   });
   const baseOnBeforeCreate = baseOptions.onBeforeCreate;
   return {
@@ -290,7 +295,7 @@ export const TiptapEditor: FC<TiptapEditorProps> = ({
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const flashStateRef = useRef(INITIAL_FLASH_STATE);
   const identity = useIdentity();
-  const { principal, activeDocName, recycleDocument } = useDocumentContext();
+  const { principal, activeDocName, recycleDocument, openTarget } = useDocumentContext();
   const docName = provider.configuration.name ?? '';
 
   const [clipboard] = useState(buildClipboardState);
@@ -306,6 +311,9 @@ export const TiptapEditor: FC<TiptapEditorProps> = ({
         onWedged: ({ externalSeq, appliedSeq }) => {
           mark('ok/editor/binding-wedge-recycle', { docName, externalSeq, appliedSeq });
           recycleDocument(docName);
+        },
+        onSidebarDrop: (payload) => {
+          openSidebarDropPayload(payload, openTarget);
         },
       }),
     );
@@ -518,7 +526,6 @@ const TiptapEditorChrome: FC<TiptapEditorChromeProps> = ({
       editor.off('create', consume);
     };
   }, [editor, docName]);
-
 
   useEffect(() => {
     const activityMap = provider.document.getMap('agent-flash');

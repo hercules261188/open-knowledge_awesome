@@ -125,6 +125,7 @@ import {
   parseOkignoreDoc,
   serializeOkignoreDoc,
 } from '@/components/settings/okignore-doc';
+import { sidebarDragPayloadForTreePath } from '@/components/sidebar-drag-payload';
 import {
   coerceTrashFailureReason,
   type TrashFailedTarget,
@@ -152,7 +153,12 @@ import { assetTabId, docTabId, folderTabId, remapPathForFolderRenames } from '@/
 import { useConflicts } from '@/hooks/use-conflicts';
 import { useConfigContext } from '@/lib/config-provider';
 import { dispatchOpenInTerminal } from '@/lib/dispatch-open-in-terminal';
-import { hashFromAssetPath, hashFromDocName, hashFromFolderPath } from '@/lib/doc-hash';
+import {
+  hashFromAssetPath,
+  hashFromDocName,
+  hashFromFolderPath,
+  replaceHashWithoutNavigation,
+} from '@/lib/doc-hash';
 import { emitDocumentsChanged, subscribeToDocumentsChanged } from '@/lib/documents-events';
 import {
   subscribeToFileTreeMenuActionDelete,
@@ -166,6 +172,7 @@ import {
   isNdjsonResponse,
   SHOW_ALL_NDJSON_ACCEPT,
 } from '@/lib/show-all-stream';
+import { OK_SIDEBAR_DRAG_MIME, serializeSidebarDragPayload } from '@/lib/sidebar-drag';
 import { joinWorkspacePath } from '@/lib/workspace-paths';
 import { mergeAndPruneRecentLocalAdds } from './file-tree-merge';
 import { OpenInAgentContextSubmenu } from './handoff/OpenInAgentContextSubmenu';
@@ -180,12 +187,6 @@ import { cancelHoverPrewarm, scheduleHoverPrewarm } from './sidebar-hover-prewar
 import { useSidebar } from './ui/sidebar';
 
 const MARKDOWN_TREE_EXTENSION_PATTERN = /\.(md|mdx)$/i;
-
-function replaceHashWithoutNavigation(hash: string) {
-  if (window.location.hash === hash) return;
-  const { pathname, search } = window.location;
-  window.history.replaceState(null, '', `${pathname}${search}${hash}`);
-}
 
 function parseAlreadyExistsRenamePath(message: string): string | null {
   const match = message.match(/^"(.+)" already exists\.$/);
@@ -219,16 +220,14 @@ const MARKDOWN_FILE_ICON_SYMBOL = `<symbol id="${MARKDOWN_FILE_ICON_ID}" viewBox
 type IconNode = [string, Record<string, string>][];
 
 function iconNodeToSvg(iconNode: IconNode): string {
-  return (
-    iconNode
-      .map(([tag, { key: _, ...attrs }]) => {
-        const attrString = Object.entries(attrs)
-          .map(([k, v]) => `${k}="${v}"`)
-          .join(' ');
-        return `<${tag} ${attrString} />`;
-      })
-      .join('')
-  );
+  return iconNode
+    .map(([tag, { key: _, ...attrs }]) => {
+      const attrString = Object.entries(attrs)
+        .map(([k, v]) => `${k}="${v}"`)
+        .join(' ');
+      return `<${tag} ${attrString} />`;
+    })
+    .join('');
 }
 
 function createLucideSpriteSymbol(id: string, iconNode: IconNode): string {
@@ -1021,6 +1020,7 @@ export function FileTree({ ref }: { ref?: Ref<FileTreeHandle | null> }) {
   const [workspace, setWorkspace] = useState<WorkspaceInfo | null>(null);
 
   const documentsRef = useRef(documents);
+  const pageMetaRef = useRef(pageMeta);
   function activateTreePath(treePath: string, entries: readonly FileEntry[] = documents) {
     const action = resolveFileTreeSelectionAction(treePath, entries);
     if (action.kind === 'none') {
@@ -1083,6 +1083,8 @@ export function FileTree({ ref }: { ref?: Ref<FileTreeHandle | null> }) {
   const skipNextResetSignatureRef = useRef<string | null>(null);
   const hoveredPrewarmDocRef = useRef<string | null>(null);
   const suppressSelectionRef = useRef(false);
+  const sidebarDragInProgressRef = useRef(false);
+  const sidebarDragClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const busyPathRef = useRef<string | null>(null);
   const recentLocalAddsRef = useRef<Map<string, number>>(new Map());
   const showHiddenFilesRef = useRef<boolean>(false);
@@ -1094,6 +1096,61 @@ export function FileTree({ ref }: { ref?: Ref<FileTreeHandle | null> }) {
   const handleRenameErrorRef = useRef<(message: string) => void>((message) => toast.error(message));
   const handleDropCompleteRef = useRef<(event: FileTreeDropResult) => void>(() => {});
   const activeTargetRef = useRef(activeTarget);
+
+  useEffect(() => {
+    if (loading || documents.length === 0) return;
+    const shadow = fileTreeHostRef.current?.querySelector(FILE_TREE_TAG_NAME)?.shadowRoot;
+    if (!shadow) return;
+
+    function clearSidebarDragInProgressSoon() {
+      if (sidebarDragClearTimerRef.current !== null) {
+        clearTimeout(sidebarDragClearTimerRef.current);
+      }
+      sidebarDragClearTimerRef.current = setTimeout(() => {
+        sidebarDragInProgressRef.current = false;
+        sidebarDragClearTimerRef.current = null;
+      }, 0);
+    }
+
+    function handleDragStart(event: Event) {
+      if (!(event instanceof DragEvent)) return;
+      const item = findTreeItemElement(event);
+      const rawPath = item?.dataset.itemPath;
+      if (!rawPath) return;
+
+      const treePath =
+        item.dataset.itemType === 'folder' ? folderPathToTreeDirectoryPath(rawPath) : rawPath;
+      const payload = sidebarDragPayloadForTreePath(
+        treePath,
+        documentsRef.current,
+        pageMetaRef.current,
+      );
+      if (!payload) return;
+
+      if (sidebarDragClearTimerRef.current !== null) {
+        clearTimeout(sidebarDragClearTimerRef.current);
+        sidebarDragClearTimerRef.current = null;
+      }
+      sidebarDragInProgressRef.current = true;
+      event.dataTransfer?.setData(OK_SIDEBAR_DRAG_MIME, serializeSidebarDragPayload(payload));
+    }
+
+    shadow.addEventListener('dragstart', handleDragStart, { capture: true });
+    shadow.addEventListener('dragend', clearSidebarDragInProgressSoon, { capture: true });
+    window.addEventListener('drop', clearSidebarDragInProgressSoon, true);
+    window.addEventListener('dragend', clearSidebarDragInProgressSoon, true);
+    return () => {
+      shadow.removeEventListener('dragstart', handleDragStart, { capture: true });
+      shadow.removeEventListener('dragend', clearSidebarDragInProgressSoon, { capture: true });
+      window.removeEventListener('drop', clearSidebarDragInProgressSoon, true);
+      window.removeEventListener('dragend', clearSidebarDragInProgressSoon, true);
+      if (sidebarDragClearTimerRef.current !== null) {
+        clearTimeout(sidebarDragClearTimerRef.current);
+        sidebarDragClearTimerRef.current = null;
+      }
+      sidebarDragInProgressRef.current = false;
+    };
+  }, [documents.length, loading]);
 
   const {
     selectedFilePath,
@@ -2118,6 +2175,7 @@ export function FileTree({ ref }: { ref?: Ref<FileTreeHandle | null> }) {
 
   useLayoutEffect(() => {
     documentsRef.current = documents;
+    pageMetaRef.current = pageMeta;
     activeDocNameRef.current = activeDocName;
     activeTargetRef.current = activeTarget;
     assetTreePathsRef.current = assetTreePaths;
@@ -2129,7 +2187,7 @@ export function FileTree({ ref }: { ref?: Ref<FileTreeHandle | null> }) {
     activeAncestorTreePathsRef.current = activeAncestorTreePaths;
     cleanupPendingCreateRef.current = cleanupPendingCreate;
     handleSelectionChangeRef.current = (selectedPaths) => {
-      if (suppressSelectionRef.current) return;
+      if (suppressSelectionRef.current || sidebarDragInProgressRef.current) return;
       if (selectedPaths.length !== 1) return;
       const selected = selectedPaths[0];
       if (selected) activateTreePath(normalizeSelectionPath(selected), documents);

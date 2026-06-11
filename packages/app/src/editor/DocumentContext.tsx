@@ -32,7 +32,6 @@ import {
   docTabId,
   filterClosableTabIds,
   filterOpenTabsForKnownTargets,
-  findOpenTabTarget,
   folderTabId,
   localTabSessionStorageKey,
   nextActiveTabAfterClose,
@@ -49,7 +48,6 @@ import {
   remapVisibleTabsForRename,
   removeOpenTab,
   removePinnedTab,
-  sameTabTarget,
   tabIdForNavigationTarget,
   writeLocalTabSessionState,
 } from './editor-tabs';
@@ -816,25 +814,19 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
       const entry = p.open(docName);
       if (!entry) return;
       consumePrewarmClick(docName, entry.poolEventId);
-      const existingDocTabId = replacingBlankTab
-        ? findOpenTabTarget(openTabsRef.current, docTabId(docName))
+      const replacementDocTabId = replacingBlankTab
+        ? nextAvailableDocTabId(openTabsRef.current, docName)
         : null;
-      const replacementDocTabId =
-        replacingBlankTab && !existingDocTabId
-          ? nextAvailableDocTabId(openTabsRef.current, docName)
-          : null;
       const opened = replacingBlankTab
-        ? existingDocTabId
-          ? { activeTabId: existingDocTabId, tabs: openTabsRef.current }
-          : {
-              activeTabId: replacementDocTabId ?? docTabId(docName),
-              tabs: addOpenTab(
-                openTabsRef.current,
-                replacementDocTabId ?? docTabId(docName),
-                MAX_POOL,
-                pinnedTabIdsRef.current,
-              ),
-            }
+        ? {
+            activeTabId: replacementDocTabId ?? docTabId(docName),
+            tabs: addOpenTab(
+              openTabsRef.current,
+              replacementDocTabId ?? docTabId(docName),
+              MAX_POOL,
+              pinnedTabIdsRef.current,
+            ),
+          }
         : openDocTab(openTabsRef.current, docName, {
             behavior,
             currentTabId: currentActiveTabId,
@@ -849,20 +841,12 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
       p.clearActive();
       const nextTabId = tabIdForNavigationTarget(target);
       if (nextTabId) {
-        const shouldPreserveCurrentTarget =
-          currentActiveTabId !== null && sameTabTarget(currentActiveTabId, nextTabId);
-        const existingTabId =
-          replacingBlankTab || shouldPreserveCurrentTarget
-            ? null
-            : findOpenTabTarget(openTabsRef.current, nextTabId);
-        const opened = existingTabId
-          ? { tabs: openTabsRef.current, activeTabId: existingTabId }
-          : openTab(openTabsRef.current, nextTabId, {
-              behavior,
-              currentTabId: currentActiveTabId,
-              limit: MAX_POOL,
-              pinnedTabIds: pinnedTabIdsRef.current,
-            });
+        const opened = openTab(openTabsRef.current, nextTabId, {
+          behavior,
+          currentTabId: currentActiveTabId,
+          limit: MAX_POOL,
+          pinnedTabIds: pinnedTabIdsRef.current,
+        });
         commitOpenTabs(opened.tabs);
         commitActiveTabId(opened.activeTabId);
         removeActiveNewTab(opened.activeTabId);
@@ -1456,8 +1440,7 @@ if (import.meta.hot) {
         delete (window as { __test_rejectSyncPromise?: unknown }).__test_rejectSyncPromise;
         delete (window as { __test_armPendingRejection?: unknown }).__test_armPendingRejection;
         delete (window as { __test_closeActiveWebSocket?: unknown }).__test_closeActiveWebSocket;
-      } catch {
-      }
+      } catch {}
     }
   });
 }
