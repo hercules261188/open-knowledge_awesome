@@ -190,6 +190,8 @@ import { startFirstRunHandshake } from './share-handoff.ts';
 import { handleShellOpenExternal } from './shell-allowlist.ts';
 import { createShowGateRegistry, type ShowGateRegistry } from './show-gate.ts';
 import { reclaimProjectSkillsOnProjectOpen, reclaimUserSkillsOnLaunch } from './skill-reclaim.ts';
+import { attachSpellcheckContextMenu } from './spellcheck-context-menu.ts';
+import { popSpellcheckMenu } from './spellcheck-menu.ts';
 import {
   type AppState,
   addRecentProject,
@@ -204,6 +206,7 @@ import {
   saveAppStateToDir,
   setLastUsedProjectParent,
   setProjectSessionState,
+  setSpellCheckEnabled as setSpellCheckEnabledState,
 } from './state-store.ts';
 import { applyThemeApplied } from './theme-applied-handler.ts';
 import { applyThemeSource, isOkThemeSource } from './theme-handler.ts';
@@ -357,6 +360,38 @@ export function getPendingSchemaIncompatibility(): SchemaIncompatibilityDiagnost
 export function clearPendingSchemaIncompatibility(): void {
   pendingSchemaIncompatibility = null;
 }
+
+function setSpellCheckEnabledAppWide(enabled: boolean): void {
+  session.defaultSession.setSpellCheckerEnabled(enabled);
+  appState = setSpellCheckEnabledState(appState, enabled);
+  saveAppState(appState);
+  refreshApplicationMenu();
+}
+
+function attachSpellcheckMenuToWindow(win: BrowserWindow): void {
+  session.defaultSession.setSpellCheckerEnabled(appState.spellCheckEnabled);
+  const openExternalSafely = handleShellOpenExternal({
+    openExternal: (url) => shell.openExternal(url),
+  });
+  attachSpellcheckContextMenu(win.webContents, {
+    isSpellCheckEnabled: () => appState.spellCheckEnabled,
+    setSpellCheckEnabled: setSpellCheckEnabledAppWide,
+    addToDictionary: (word) => {
+      session.defaultSession.addWordToSpellCheckerDictionary(word);
+    },
+    openExternal: (url) => {
+      void openExternalSafely(url).catch((err: unknown) => {
+        getLogger('spellcheck-menu').warn(
+          { err: err instanceof Error ? err.message : String(err), url },
+          'context-menu search openExternal failed',
+        );
+      });
+    },
+    popMenu: (input) => {
+      popSpellcheckMenu({ Menu, window: win }, input);
+    },
+  });
+}
 let navigatorWindow: BrowserWindowLike | null = null;
 let wm: WindowManager;
 const showGate: ShowGateRegistry = createShowGateRegistry({
@@ -475,6 +510,7 @@ function ensureWindowManager() {
         e.preventDefault();
       });
       applyCascadePosition(win);
+      attachSpellcheckMenuToWindow(win);
       return win as unknown as BrowserWindowLike;
     },
     forkUtility: (entry, args, opts) => {
@@ -664,6 +700,7 @@ function openNavigator(pendingPayload?: ShareNavigatorPayload) {
       win.on('closed', () => {
         navigatorWindow = null;
       });
+      attachSpellcheckMenuToWindow(win);
       return win as unknown as BrowserWindowLike;
     },
     rendererEntryPath: app.isPackaged
@@ -1213,6 +1250,8 @@ async function runApplicationMenuRefresh(): Promise<void> {
     onToggleDocPanel: () => sendMenuActionToFocused('toggle-doc-panel'),
     onExpandAll: () => sendMenuActionToFocused('expand-all-tree'),
     onCollapseAll: () => sendMenuActionToFocused('collapse-all-tree'),
+    spellCheckEnabled: appState.spellCheckEnabled,
+    onToggleSpellCheck: () => setSpellCheckEnabledAppWide(!appState.spellCheckEnabled),
   });
 }
 

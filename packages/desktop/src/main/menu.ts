@@ -47,6 +47,8 @@ export interface MenuDeps {
   canCollapseAll?: boolean;
   onExpandAll?(): void;
   onCollapseAll?(): void;
+  spellCheckEnabled?: boolean;
+  onToggleSpellCheck?(): void;
 }
 
 export async function installApplicationMenu(deps: MenuDeps): Promise<void> {
@@ -260,6 +262,14 @@ export function buildMenuTemplate(deps: MenuDeps): MenuItemConstructorOptions[] 
         { role: 'copy' },
         { role: 'paste' },
         { role: 'selectAll' },
+        { type: 'separator' },
+        {
+          label: 'Check Spelling While Typing',
+          type: 'checkbox',
+          checked: deps.spellCheckEnabled ?? true,
+          enabled: deps.onToggleSpellCheck !== undefined,
+          click: () => deps.onToggleSpellCheck?.(),
+        },
       ],
     },
 

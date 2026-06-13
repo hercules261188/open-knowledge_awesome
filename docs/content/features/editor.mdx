@@ -23,6 +23,22 @@ Open any doc from the sidebar. The body renders as WYSIWYG markdown with familia
 
 A backslash command (`/`) opens an insert menu for headings, lists, code blocks, callouts, and the other content shapes the editor supports.
 
+## Right-click menu and spell check
+
+In the desktop app, right-clicking editable text opens a native context menu. Any editable field gets **Cut / Copy / Paste / Select All**; when there's a selection or a flagged word under the cursor, **Look Up** (the macOS dictionary panel) and **Search with Google** join it.
+
+Spell checking uses the native macOS spellchecker (language follows your macOS settings), so misspelled words get the familiar red underline. Right-clicking a flagged word adds the spelling section:
+
+| Item | Behavior |
+| --- | --- |
+| *Suggestions* | The spellchecker's corrections, one row each; pick one to replace the word. |
+| **Add to Dictionary** | Teaches the macOS system dictionary the word — persistent, and shared with your other Mac apps (Safari, Notes). |
+| **Disable Spell Check** | Turns spell checking off app-wide. The choice persists across relaunches. |
+
+While spell check is off, right-clicking any editable text offers **Enable Spell Check**, and the menu bar carries the same toggle as **Edit ▸ Check Spelling While Typing** (see [Edit menu](#edit-menu)) — flip either to bring the squiggles back.
+
+Surfaces with their own specialized right-click menus — asset and wiki-link chips, the [file sidebar](#right-click-context-menus), editor tabs — keep them; the editor menu never doubles up on top. In the web build the browser's own context menu fills this role.
+
 ## Edit with AI
 
 Select text in the WYSIWYG editor to hand that exact passage to an installed agent. The selection bubble menu shows an **Edit with AI** button alongside the formatting controls. Clicking it opens a popover with an instruction field and your installed-agent list (Claude, Codex, or Cursor). Type what you want done (the instruction is optional), pick an agent, and it opens with the project as its working directory and a prompt naming the doc, your instruction, and the selected passage.
@@ -162,6 +178,14 @@ Below the project navigation items (Switch Project, Open Folder, Open Recent, CL
 | **Copy Path ▸** | (none) | Full / Relative path of the active target. |
 
 **Switch Project…** moved to `Cmd+Shift+P`. The old `Cmd+Shift+N` binding now creates a new folder, matching macOS Finder, VS Code, and the broader convention.
+
+### Edit menu
+
+Alongside the standard Undo / Redo / Cut / Copy / Paste / Select All items:
+
+| Item | Accelerator | Behavior |
+| --- | --- | --- |
+| **Check Spelling While Typing** | (none) | Checkbox reflecting whether spell check is on. Toggling applies app-wide and persists across relaunches — it's the same switch the editor right-click menu's Disable / Enable Spell Check rows flip (see [Right-click menu and spell check](#right-click-menu-and-spell-check)). |
 
 ### View menu
 

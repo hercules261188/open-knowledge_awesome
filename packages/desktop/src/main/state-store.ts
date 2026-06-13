@@ -35,6 +35,7 @@ export interface AppState {
   schemaVersion: number;
   lastUsedProjectParent: string | null;
   pendingWindowRestore: string[] | null;
+  spellCheckEnabled: boolean;
 }
 
 const RECENT_CAP = 20;
@@ -52,11 +53,16 @@ export function emptyState(): AppState {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     lastUsedProjectParent: null,
     pendingWindowRestore: null,
+    spellCheckEnabled: true,
   };
 }
 
 export function setLastUsedProjectParent(state: AppState, parent: string): AppState {
   return { ...state, lastUsedProjectParent: parent };
+}
+
+export function setSpellCheckEnabled(state: AppState, enabled: boolean): AppState {
+  return { ...state, spellCheckEnabled: enabled };
 }
 
 function emptyProjectSessionState(): ProjectSessionState {
@@ -303,6 +309,8 @@ export function parseAppState(raw: unknown): AppState | null {
   const pendingWindowRestore = Array.isArray(obj.pendingWindowRestore)
     ? sanitizeStringArray(obj.pendingWindowRestore)
     : null;
+  const spellCheckEnabled =
+    typeof obj.spellCheckEnabled === 'boolean' ? obj.spellCheckEnabled : true;
   return {
     recentProjects,
     lastOpenedProject,
@@ -315,5 +323,6 @@ export function parseAppState(raw: unknown): AppState | null {
     schemaVersion,
     lastUsedProjectParent,
     pendingWindowRestore,
+    spellCheckEnabled,
   };
 }

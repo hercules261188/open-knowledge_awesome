@@ -823,3 +823,74 @@ describe('buildMenuTemplate — View → Show/Hide Sidebar', () => {
     expect(onToggleDocPanel2).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('buildMenuTemplate — Edit → Check Spelling While Typing', () => {
+  function editSubmenu(deps: MenuDeps): MenuItemConstructorOptions[] {
+    const edit = findByLabel(buildMenuTemplate(deps), 'Edit');
+    const sub = edit?.submenu as MenuItemConstructorOptions[] | undefined;
+    if (!sub) throw new Error('Edit submenu missing');
+    return sub;
+  }
+
+  test('renders as a checkbox-type item, checked when spellCheckEnabled is true', () => {
+    const item = findByLabel(
+      buildMenuTemplate(makeDeps({ spellCheckEnabled: true, onToggleSpellCheck: mock(() => {}) })),
+      'Check Spelling While Typing',
+    );
+    expect(item).toBeDefined();
+    expect(item?.type).toBe('checkbox');
+    expect(item?.checked).toBe(true);
+  });
+
+  test('renders unchecked when spellCheckEnabled is false', () => {
+    const item = findByLabel(
+      buildMenuTemplate(makeDeps({ spellCheckEnabled: false, onToggleSpellCheck: mock(() => {}) })),
+      'Check Spelling While Typing',
+    );
+    expect(item?.checked).toBe(false);
+  });
+
+  test('defaults to checked when spellCheckEnabled dep is omitted (matches the on-by-default persistence default)', () => {
+    const item = findByLabel(
+      buildMenuTemplate(makeDeps({ onToggleSpellCheck: mock(() => {}) })),
+      'Check Spelling While Typing',
+    );
+    expect(item?.checked).toBe(true);
+  });
+
+  test('ENABLED when onToggleSpellCheck handler is provided', () => {
+    const item = findByLabel(
+      buildMenuTemplate(makeDeps({ onToggleSpellCheck: mock(() => {}) })),
+      'Check Spelling While Typing',
+    );
+    expect(item?.enabled).toBe(true);
+  });
+
+  test('DISABLED when onToggleSpellCheck handler is missing (unit-test default = unwired)', () => {
+    const item = findByLabel(buildMenuTemplate(makeDeps()), 'Check Spelling While Typing');
+    expect(item?.enabled).toBe(false);
+  });
+
+  test('click dispatches deps.onToggleSpellCheck', () => {
+    const onToggleSpellCheck = mock(() => {});
+    const item = findByLabel(
+      buildMenuTemplate(makeDeps({ onToggleSpellCheck })),
+      'Check Spelling While Typing',
+    );
+    (item?.click as (() => void) | undefined)?.();
+    expect(onToggleSpellCheck).toHaveBeenCalledTimes(1);
+  });
+
+  test('click is a safe no-op when onToggleSpellCheck dep is omitted', () => {
+    const item = findByLabel(buildMenuTemplate(makeDeps()), 'Check Spelling While Typing');
+    expect(() => (item?.click as (() => void) | undefined)?.()).not.toThrow();
+  });
+
+  test('lives in the Edit submenu after the Select All role', () => {
+    const sub = editSubmenu(makeDeps({ onToggleSpellCheck: mock(() => {}) }));
+    const selectAllIdx = sub.findIndex((i) => i.role === 'selectAll');
+    const spellIdx = sub.findIndex((i) => i.label === 'Check Spelling While Typing');
+    expect(selectAllIdx).toBeGreaterThanOrEqual(0);
+    expect(spellIdx).toBeGreaterThan(selectAllIdx);
+  });
+});
