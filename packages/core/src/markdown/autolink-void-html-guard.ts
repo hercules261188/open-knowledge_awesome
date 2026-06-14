@@ -297,7 +297,7 @@ export function protectFromMdx(source: string): string {
     unmatchedPositions.push(...stack);
 
     if (unmatchedPositions.length > 0) {
-      const chars = [...result];
+      const chars = result.split('');
       for (const pos of unmatchedPositions) {
         chars[pos] = GUARD_OPEN_BRACE;
       }
