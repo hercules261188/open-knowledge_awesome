@@ -44,8 +44,8 @@ function FeatureCard({
         {children}
       </MockupCard>
       <div className="flex flex-col gap-1.5">
-        <h3 className="text-lg font-semibold text-slide-text">{title}</h3>
-        <p className="text-base text-slide-muted">{description}</p>
+        <h3 className="text-lg font-semibold text-slide-text leading-snug">{title}</h3>
+        <p className="text-base leading-snug text-slide-muted">{description}</p>
       </div>
     </div>
   );

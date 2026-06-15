@@ -20,7 +20,7 @@ const Description = ({
   children: React.ReactNode;
   className?: string;
 }) => {
-  return <p className={cn('text-xl text-slide-muted', className)}>{children}</p>;
+  return <p className={cn('text-xl leading-snug text-slide-muted', className)}>{children}</p>;
 };
 
 interface SectionHeadingProps {
@@ -43,11 +43,11 @@ const SectionHeading = ({
   descriptionClassName,
 }: SectionHeadingProps) => {
   return (
-    <div className={cn('flex items-left gap-4 flex-col', className)}>
+    <div className={cn('flex items-left gap-3 flex-col', className)}>
       {tag && <Tag className={tagClassName}>{tag}</Tag>}
       <h2
         className={cn(
-          'text-4xl font-light tracking-tight text-slide-text sm:text-5xl',
+          'text-4xl font-light leading-tight tracking-tight text-slide-text sm:text-5xl',
           headingClassName,
         )}
       >

@@ -33,10 +33,10 @@ const features: Feature[] = [
 
 function FeatureRow({ icon: Icon, title, description }: Feature) {
   return (
-    <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-1.5 py-5">
+    <div className="grid grid-cols-[auto_1fr] items-center gap-x-3.5 gap-y-1 py-5">
       <Icon className="size-5 text-primary" aria-hidden="true" />
-      <h3 className="text-lg font-semibold text-slide-text">{title}</h3>
-      <p className="col-start-2 text-base text-slide-muted">{description}</p>
+      <h3 className="text-lg font-semibold text-slide-text leading-snug">{title}</h3>
+      <p className="col-start-2 text-base leading-snug text-slide-muted">{description}</p>
     </div>
   );
 }

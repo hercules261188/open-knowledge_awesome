@@ -43,8 +43,8 @@ export function PutItToWork() {
               {card.visual}
             </div>
             <div className="flex flex-col gap-1.5">
-              <h3 className="text-lg font-semibold text-slide-text">{card.title}</h3>
-              <p className="text-base text-slide-muted">{card.description}</p>
+              <h3 className="text-lg font-semibold text-slide-text leading-snug">{card.title}</h3>
+              <p className="text-base leading-snug text-slide-muted">{card.description}</p>
             </div>
           </article>
         ))}

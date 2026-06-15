@@ -15,8 +15,8 @@ const FeatureItem = ({ icon: Icon, title, description, className }: FeatureItemP
         <Icon className="h-6 w-6" strokeWidth={1.75} />
       </div>
       <div className="flex flex-col gap-1.5">
-        <h3 className="text-lg font-semibold text-slide-text">{title}</h3>
-        <p className="text-lg text-slide-muted">{description}</p>
+        <h3 className="text-lg font-semibold text-slide-text leading-snug">{title}</h3>
+        <p className="text-lg leading-snug text-slide-muted">{description}</p>
       </div>
     </div>
   );
