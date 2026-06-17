@@ -8,7 +8,6 @@ import { OK_PROJECT_MARKER } from '@inkeep/open-knowledge-core';
 import { type KeepaliveHandle, startKeepalive } from '@inkeep/open-knowledge-core/keepalive';
 import {
   type AgentIdentity,
-  buildInstructions,
   type Config,
   getLocalDir,
   installPrettyZodErrors,
@@ -156,15 +155,10 @@ export async function startGlobalMcpServer(
     startupConfig: opts.startupConfig,
   });
 
-  const server = new McpServer(
-    {
-      name: MCP_SERVER_NAME,
-      version: RUNTIME_VERSION,
-    },
-    {
-      instructions: buildInstructions({ dir: '.' }),
-    },
-  );
+  const server = new McpServer({
+    name: MCP_SERVER_NAME,
+    version: RUNTIME_VERSION,
+  });
   installPrettyZodErrors(server);
 
   const connectionId = randomUUID();

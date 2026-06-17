@@ -25,7 +25,7 @@ import {
 } from './shared.ts';
 import { resolveTemplatePath } from './verb-schemas.ts';
 
-export const DESCRIPTION = [
+const DESCRIPTION = [
   '[Requires: Hocuspocus server] Move or rename a document, folder, or asset through the managed flow at `POST /api/rename-path`. Works for all three — the tool probes the content directory to decide. Inbound wiki-links plus supported inline Markdown links are rewritten across affected docs; renamed assets are reported.',
   '',
   '**Parameters:**',

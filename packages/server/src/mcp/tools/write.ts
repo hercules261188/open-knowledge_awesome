@@ -65,7 +65,7 @@ const BASE_DESCRIPTION = [
   'Responses may include `structuredContent.document.warnings` (batch: per-entry under `documents[]`) — advisory entries discriminated by `kind`: `content-divergence` / `disk-edit-reconciled` (write-integrity — re-read the doc) and `mermaid-parse-error` (the write landed but that fence will not render — fix it and re-edit).',
 ].join('\n');
 
-export const DESCRIPTION = `${BASE_DESCRIPTION}\n${renderInventoryFooter()}`;
+const DESCRIPTION = `${BASE_DESCRIPTION}\n${renderInventoryFooter()}`;
 
 interface WriteDeps {
   serverUrl: ServerUrlOrResolver;

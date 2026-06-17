@@ -52,7 +52,7 @@ const BASE_DESCRIPTION = [
   'Responses may include `structuredContent.document.warnings` — advisory entries discriminated by `kind`: `content-divergence` / `disk-edit-reconciled` (write-integrity — re-read the doc with `exec("cat <path>")`) and `mermaid-parse-error` (the edit landed but that fence will not render — fix it and re-edit).',
 ].join('\n');
 
-export const DESCRIPTION = `${BASE_DESCRIPTION}\n${renderInventoryFooter()}`;
+const DESCRIPTION = `${BASE_DESCRIPTION}\n${renderInventoryFooter()}`;
 
 interface EditDeps {
   serverUrl: ServerUrlOrResolver;

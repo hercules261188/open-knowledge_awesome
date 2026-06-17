@@ -10,7 +10,7 @@ import { z } from 'zod';
 import type { ConfigOrResolver, ServerInstance } from './shared.ts';
 import { outputSchemaWithText, ROUTED_CWD_DESCRIPTION, textPlusStructured } from './shared.ts';
 
-export const DESCRIPTION = [
+const DESCRIPTION = [
   '[Operates on registry data; no running OK server required] Return the OK authoring palette so a generated document reads as one coherent, themed artifact.',
   '',
   'Three sections:',

@@ -1,6 +1,6 @@
 ---
 name: open-knowledge
-description: "MUST invoke before reading or editing any `.md` / `.mdx` file, and before any `mcp__open-knowledge__*` tool call (`exec`, `search`, `write`, `edit`, and the rest). This skill is installed into the repository by `ok init`, so its presence alone means this is an Open Knowledge project — its runtime contract governs every markdown file here, with no need to probe for a `.ok/` directory. Authoritative agent-runtime contract; supersedes the overlapping MCP server `instructions` echo."
+description: "MUST invoke before reading or editing any `.md` / `.mdx` file, and before any `mcp__open-knowledge__*` tool call (`exec`, `search`, `write`, `edit`, and the rest). This skill is installed into the repository by `ok init`, so its presence alone means this is an Open Knowledge project — its runtime contract governs every markdown file here, with no need to probe for a `.ok/` directory. Authoritative agent-runtime contract for working inside this Open Knowledge project."
 compatibility: "Claude Code, Claude Desktop, Claude Cowork, Claude.ai web. Requires Open Knowledge MCP server + code execution."
 metadata:
   version: "0.14.0"
@@ -11,7 +11,7 @@ metadata:
 
 Open Knowledge (OK) is a markdown-CRDT collaboration platform exposed via MCP. This skill carries the behavioral rules agents need to use it fluently. Every section is a MUST unless marked otherwise.
 
-> **Authoritative source.** Where the MCP server's `instructions` echo overlaps with this skill, this skill wins — the full attach rule, grounding rule, media rules, dead-link verification, and failure-mode guidance live only here.
+> **Authoritative source.** This skill is the single source of Open Knowledge agent guidance — the full attach rule, grounding rule, media rules, dead-link verification, and failure-mode guidance live only here.
 
 > Skill version: tracks `@inkeep/open-knowledge-server` package version. Check `cat ~/.ok/skill-state.yml` to see what's installed locally. **Version floor:** `ok seed` (referenced below) requires `@inkeep/open-knowledge` >= 0.4.0. If `ok seed` errors with `unknown command`, upgrade: `npm install -g @inkeep/open-knowledge`.
 

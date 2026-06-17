@@ -7,7 +7,7 @@ import {
   textPlusStructured,
 } from './shared.ts';
 
-export const DESCRIPTION = [
+const DESCRIPTION = [
   '[Operates on disk; no running OK server required] Read the effective merged Open Knowledge config (defaults → user → project).',
   '',
   'Use this when you need to inspect the config mid-session — e.g., after a write that may have changed disk state, or to re-confirm the value of a field before reading it again.',

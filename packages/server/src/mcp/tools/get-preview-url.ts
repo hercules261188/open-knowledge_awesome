@@ -20,7 +20,7 @@ import {
   textPlusStructured,
 } from './shared.ts';
 
-export const DESCRIPTION = [
+const DESCRIPTION = [
   'Resolve the browser-reachable preview URL for an Open Knowledge project (optionally for a specific doc). Opening a preview counts as demand: when no OK server is running for the project, this call auto-starts one (same `OK_MCP_AUTOSTART` gate and spawn timeout as the read/write tools) and waits briefly for the preview UI to bind — a cold first call can take a few seconds; calls against a running system answer immediately.',
   '',
   'Per-response `previewUrl` fields on read/write tools are ROUTE-ONLY (`/#/<doc>`, no host:port) — they identify which doc to preview, not a URL to open by itself. Call this tool to get the full, openable URL.',
