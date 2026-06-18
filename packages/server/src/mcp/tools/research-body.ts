@@ -52,6 +52,17 @@ Research articles default to **3P/external framing** — investigating third-par
 
 ---
 
+## Persist as you go — the article IS your checkpoint
+
+⛔ **PERSIST AS YOU GO — crash-safe checkpoint rule.** The single most expensive failure this workflow has produced is completed research lost to a mid-session rate limit or crash — analysis held in context, never written, discarded when the session died. The user paid for work that vanished. The knowledge base is the checkpoint; two rules make every step crash-safe:
+
+- **\`ingest\` each source the moment you fetch it (Step 3), one at a time** — never fetch all sources and ingest them in a trailing batch. An ingested source survives a crash; a fetched-but-unwritten one does not.
+- **Create the article skeleton early and fill it section-by-section as you read (Steps 4–5), not in one final write at the end.** After you analyze each source, \`edit\` its findings into the article before moving to the next. A crash after reading five of eight sources then leaves five sections safely in the KB; you resume by reading the partial article back, not by re-running the whole sweep.
+
+Structured notes that live only in your context are not persisted work. If a finding is worth keeping, it belongs in an ingested source or in the article — written, not held.
+
+---
+
 ## Step 0: Create workflow checkpoint tasks
 
 ⛔ **ALWAYS THE FIRST ACTION.** Before any read, any scan, any fetch — create tasks. They persist across context compaction, make skipped steps immediately visible, and show progress to the user.
@@ -194,6 +205,8 @@ Take structured notes:
 - **Unknowns** and open questions — the boundary of what you know
 - **Relevance** to the specific decision at hand
 
+**Write these notes into the article as you take them, not after (MUST — see *Persist as you go* above).** Create the article skeleton — frontmatter + the Step 5 section headings — before you start reading, then \`edit\` each source's findings into the relevant section the moment you finish analyzing it. The "notes" ARE the article's Findings section in progress; don't hold them in context to transcribe in one pass at Step 5. A rate limit between here and Step 5 must not be able to discard analysis you've already done. By the time you reach Step 5 the article is mostly written, and Step 5 becomes finalize-and-polish.
+
 ### Grounding discipline
 
 Every factual claim in the article must cite its source inline. No unsourced speculation. If you don't have evidence: (a) run another search and cite it, (b) mark inline \`(TODO: needs source)\`, or (c) don't write the claim. Never fabricate.
@@ -201,6 +214,8 @@ Every factual claim in the article must cite its source inline. No unsourced spe
 ---
 
 ## Step 5: Write the research article (Path A only)
+
+If you followed *Persist as you go*, the article already exists and is substantially filled from Step 4 — this step **finalizes** it (fill any remaining sections, tighten the recommendation, run the structure + validation checks below) rather than writing from a blank doc. **If it does not exist or is thin, and you are resuming after an interruption: \`exec("cat <path>")\` the partial article back first and fill only the missing sections** — and note that any Step 4 analysis that was never written to the KB was lost when the session broke, so re-derive only what's actually missing. Creating the doc from scratch here means the incremental rule was skipped; that's the failure mode, not the happy path.
 
 Save a markdown document inside the content directory. Path convention:
 
