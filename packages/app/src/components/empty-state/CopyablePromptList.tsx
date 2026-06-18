@@ -6,6 +6,7 @@ import {
   useCreateSuggestions,
 } from '@/components/empty-state/use-create-suggestions';
 import { Button } from '@/components/ui/button';
+import { scheduleClipboardWrite } from '@/lib/share/clipboard-adapter';
 import { cn } from '@/lib/utils';
 
 interface CopyablePromptListProps {
@@ -22,9 +23,7 @@ export function CopyablePromptList({ scenario, className }: CopyablePromptListPr
   useEffect(() => () => clearTimeout(resetTimerRef.current), []);
 
   function handleCopy(id: string, prompt: string) {
-    if (!navigator.clipboard) return;
-    void navigator.clipboard
-      .writeText(prompt)
+    void scheduleClipboardWrite(prompt)
       .then(() => {
         setCopiedId(id);
         clearTimeout(resetTimerRef.current);
