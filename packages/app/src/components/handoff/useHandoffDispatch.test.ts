@@ -1,6 +1,7 @@
 import { describe, expect, mock, test } from 'bun:test';
 import { setTimeout as wait } from 'node:timers/promises';
 import type { HandoffOutcome, HandoffPayload, HandoffTarget } from '@inkeep/open-knowledge-core';
+import { withSkillPointer } from '@inkeep/open-knowledge-core';
 import type {
   HandoffDispatchDeps,
   HandoffDispatchInput,
@@ -187,7 +188,9 @@ describe('runHandoffDispatch — success path', () => {
       '/tmp/demo-project/specs/2026-04-21-open-in-agent-desktop/SPEC.md',
     );
     expect(payload.prompt).toBe(
-      "Let's work on `specs/2026-04-21-open-in-agent-desktop/SPEC.md` using Open Knowledge. Open the OK editor in web view.",
+      withSkillPointer(
+        "Let's work on `specs/2026-04-21-open-in-agent-desktop/SPEC.md` using Open Knowledge. Open the OK editor in web view.",
+      ),
     );
   });
 
@@ -225,9 +228,11 @@ describe('runHandoffDispatch — success path', () => {
     expect(payload.target).toBe('codex');
     expect(payload.projectDir).toBe('/Users/sarah/proj');
     expect(payload.docPath).toBe('');
-    expect(payload.prompt).toBe(composeEmptySpacePrompt(true));
+    expect(payload.prompt).toBe(withSkillPointer(composeEmptySpacePrompt(true)));
     expect(payload.prompt).toBe(
-      "Let's work on this project using Open Knowledge. Open the OK editor in web view.",
+      withSkillPointer(
+        "Let's work on this project using Open Knowledge. Open the OK editor in web view.",
+      ),
     );
   });
 
@@ -251,10 +256,12 @@ describe('runHandoffDispatch — success path', () => {
     expect(payload.projectDir).toBe('/Users/sarah/proj');
     expect(payload.docPath).toBe('');
     expect(payload.prompt).toBe(
-      composeFolderPrompt('specs/2026-05-16-sidebar-context-menus', true),
+      withSkillPointer(composeFolderPrompt('specs/2026-05-16-sidebar-context-menus', true)),
     );
     expect(payload.prompt).toBe(
-      "Let's work on the `specs/2026-05-16-sidebar-context-menus` folder using Open Knowledge. Open the OK editor in web view.",
+      withSkillPointer(
+        "Let's work on the `specs/2026-05-16-sidebar-context-menus` folder using Open Knowledge. Open the OK editor in web view.",
+      ),
     );
   });
 });
@@ -267,7 +274,9 @@ describe('runHandoffDispatch — autoOpen=false honors the user preference', () 
     const [payload] = (deps.dispatchHandoff as ReturnType<typeof mock>).mock.calls[0] as [
       HandoffPayload,
     ];
-    expect(payload.prompt).toBe("Let's work on `specs/foo/SPEC.md` using Open Knowledge.");
+    expect(payload.prompt).toBe(
+      withSkillPointer("Let's work on `specs/foo/SPEC.md` using Open Knowledge."),
+    );
     expect(payload.prompt).not.toContain('Open the OK editor');
   });
 
@@ -284,7 +293,9 @@ describe('runHandoffDispatch — autoOpen=false honors the user preference', () 
     const [payload] = (deps.dispatchHandoff as ReturnType<typeof mock>).mock.calls[0] as [
       HandoffPayload,
     ];
-    expect(payload.prompt).toBe("Let's work on the `specs/notes` folder using Open Knowledge.");
+    expect(payload.prompt).toBe(
+      withSkillPointer("Let's work on the `specs/notes` folder using Open Knowledge."),
+    );
     expect(payload.prompt).not.toContain('Open the OK editor');
   });
 
@@ -300,7 +311,9 @@ describe('runHandoffDispatch — autoOpen=false honors the user preference', () 
     const [payload] = (deps.dispatchHandoff as ReturnType<typeof mock>).mock.calls[0] as [
       HandoffPayload,
     ];
-    expect(payload.prompt).toBe("Let's work on this project using Open Knowledge.");
+    expect(payload.prompt).toBe(
+      withSkillPointer("Let's work on this project using Open Knowledge."),
+    );
     expect(payload.prompt).not.toContain('Open the OK editor');
   });
 });
@@ -783,9 +796,11 @@ describe('selectScopedPrompt — template selection across autoOpen modes', () =
       'claude-code',
       true,
     );
-    expect(out).toBe(composeFilePrompt('notes/today.md', true));
+    expect(out).toBe(withSkillPointer(composeFilePrompt('notes/today.md', true)));
     expect(out).toBe(
-      "Let's work on `notes/today.md` using Open Knowledge. Open the OK editor in web view.",
+      withSkillPointer(
+        "Let's work on `notes/today.md` using Open Knowledge. Open the OK editor in web view.",
+      ),
     );
   });
 
@@ -800,7 +815,7 @@ describe('selectScopedPrompt — template selection across autoOpen modes', () =
       'claude-code',
       false,
     );
-    expect(out).toBe("Let's work on `notes/today.md` using Open Knowledge.");
+    expect(out).toBe(withSkillPointer("Let's work on `notes/today.md` using Open Knowledge."));
   });
 
   test('folder scope (docContext null + folderRelativePath set) returns composeFolderPrompt with autoOpen=true trailer', async () => {
@@ -816,9 +831,11 @@ describe('selectScopedPrompt — template selection across autoOpen modes', () =
       'claude-code',
       true,
     );
-    expect(out).toBe(composeFolderPrompt('notes', true));
+    expect(out).toBe(withSkillPointer(composeFolderPrompt('notes', true)));
     expect(out).toBe(
-      "Let's work on the `notes` folder using Open Knowledge. Open the OK editor in web view.",
+      withSkillPointer(
+        "Let's work on the `notes` folder using Open Knowledge. Open the OK editor in web view.",
+      ),
     );
   });
 
@@ -834,7 +851,7 @@ describe('selectScopedPrompt — template selection across autoOpen modes', () =
       'claude-code',
       false,
     );
-    expect(out).toBe("Let's work on the `notes` folder using Open Knowledge.");
+    expect(out).toBe(withSkillPointer("Let's work on the `notes` folder using Open Knowledge."));
   });
 
   test('empty-space scope (both null/absent) returns composeEmptySpacePrompt(autoOpen=true)', async () => {
@@ -849,9 +866,11 @@ describe('selectScopedPrompt — template selection across autoOpen modes', () =
       'claude-code',
       true,
     );
-    expect(out).toBe(composeEmptySpacePrompt(true));
+    expect(out).toBe(withSkillPointer(composeEmptySpacePrompt(true)));
     expect(out).toBe(
-      "Let's work on this project using Open Knowledge. Open the OK editor in web view.",
+      withSkillPointer(
+        "Let's work on this project using Open Knowledge. Open the OK editor in web view.",
+      ),
     );
   });
 
@@ -866,7 +885,7 @@ describe('selectScopedPrompt — template selection across autoOpen modes', () =
       'claude-code',
       false,
     );
-    expect(out).toBe("Let's work on this project using Open Knowledge.");
+    expect(out).toBe(withSkillPointer("Let's work on this project using Open Knowledge."));
   });
 
   test('file scope threads the toolbar instruction into the directive prompt', async () => {
@@ -882,7 +901,9 @@ describe('selectScopedPrompt — template selection across autoOpen modes', () =
       'claude-code',
       true,
     );
-    expect(out).toBe(composeFilePrompt('notes/today.md', true, 'Tighten the intro'));
+    expect(out).toBe(
+      withSkillPointer(composeFilePrompt('notes/today.md', true, 'Tighten the intro')),
+    );
     expect(out).toContain('Instruction:\n\n> Tighten the intro');
   });
 
@@ -988,7 +1009,9 @@ describe('selectScopedPrompt — template selection across autoOpen modes', () =
       'claude-code',
       true,
     );
-    expect(out).toBe(composeCreatePrompt('a worldbuilding wiki', true, 'new-project'));
+    expect(out).toBe(
+      withSkillPointer(composeCreatePrompt('a worldbuilding wiki', true, 'new-project')),
+    );
     expect(out).toContain('> a worldbuilding wiki');
     expect(out).toContain('Open the OK editor in web view.');
   });
@@ -1018,7 +1041,7 @@ describe('selectScopedPrompt — template selection across autoOpen modes', () =
       'claude-code',
       false,
     );
-    expect(out).toBe(composeCreatePrompt('a wiki', false, 'new-project'));
+    expect(out).toBe(withSkillPointer(composeCreatePrompt('a wiki', false, 'new-project')));
   });
 
   test('create scope with empty createDescription routes to the create composer, NOT empty-space', async () => {
@@ -1037,8 +1060,8 @@ describe('selectScopedPrompt — template selection across autoOpen modes', () =
       'claude-code',
       true,
     );
-    expect(out).toBe(composeCreatePrompt('', true, 'new-project'));
-    expect(out).not.toBe(composeEmptySpacePrompt(true));
+    expect(out).toBe(withSkillPointer(composeCreatePrompt('', true, 'new-project')));
+    expect(out).not.toBe(withSkillPointer(composeEmptySpacePrompt(true)));
   });
 
   test('precedence: docContext beats folderRelativePath when both are set (defensive ordering)', async () => {
@@ -1054,7 +1077,7 @@ describe('selectScopedPrompt — template selection across autoOpen modes', () =
       'claude-code',
       true,
     );
-    expect(out).toBe(composeFilePrompt('a.md', true));
+    expect(out).toBe(withSkillPointer(composeFilePrompt('a.md', true)));
   });
 
   test('selection scope (selection set) returns composeSelectionPrompt for the target', async () => {
@@ -1076,6 +1099,43 @@ describe('selectScopedPrompt — template selection across autoOpen modes', () =
       true,
     );
     expect(out).toBe(composeSelectionPrompt({ ...selection, target: 'cursor' }));
+  });
+
+  test('the standing skill pointer rides every directive scope but NOT selection', async () => {
+    const { selectScopedPrompt } = await import('./useHandoffDispatch');
+    const { OK_PROJECT_SKILL_POINTER } = await import('@inkeep/open-knowledge-core');
+    const base = { projectDir: '/proj', docPath: '' } as const;
+
+    const file = selectScopedPrompt(
+      { ...base, docContext: { relativePath: 'a.md' }, docPath: '/proj/a.md' },
+      'claude-code',
+      true,
+    );
+    const folder = selectScopedPrompt(
+      { ...base, docContext: null, folderRelativePath: 'specs' },
+      'claude-code',
+      true,
+    );
+    const empty = selectScopedPrompt({ ...base, docContext: null }, 'claude-code', true);
+    const create = selectScopedPrompt(
+      { ...base, docContext: null, createDescription: 'a wiki' },
+      'claude-code',
+      true,
+    );
+    const selection = selectScopedPrompt(
+      {
+        ...base,
+        docContext: null,
+        selection: { relativePath: 'a.md', instruction: 'x', selectionMarkdown: 'y' },
+      },
+      'claude-code',
+      true,
+    );
+
+    for (const prompt of [file, folder, empty, create]) {
+      expect(prompt.startsWith(OK_PROJECT_SKILL_POINTER)).toBe(true);
+    }
+    expect(selection).not.toContain(OK_PROJECT_SKILL_POINTER);
   });
 
   test('precedence: selection beats docContext when both are set (defensive ordering)', async () => {
@@ -1309,7 +1369,7 @@ describe('composeTerminalLaunchPrompt — docked-terminal launcher always suppre
       projectDir: '/proj',
       docPath: '/proj/notes/today.md',
     });
-    expect(out).toBe("Let's work on `notes/today.md` using Open Knowledge.");
+    expect(out).toBe(withSkillPointer("Let's work on `notes/today.md` using Open Knowledge."));
     expect(out).not.toContain('Open the OK editor');
   });
 
@@ -1321,7 +1381,9 @@ describe('composeTerminalLaunchPrompt — docked-terminal launcher always suppre
       projectDir: '/proj',
       docPath: '',
     });
-    expect(out).toBe("Let's work on the `specs/foo` folder using Open Knowledge.");
+    expect(out).toBe(
+      withSkillPointer("Let's work on the `specs/foo` folder using Open Knowledge."),
+    );
     expect(out).not.toContain('Open the OK editor');
   });
 
@@ -1332,7 +1394,7 @@ describe('composeTerminalLaunchPrompt — docked-terminal launcher always suppre
       projectDir: '/proj',
       docPath: '',
     });
-    expect(out).toBe("Let's work on this project using Open Knowledge.");
+    expect(out).toBe(withSkillPointer("Let's work on this project using Open Knowledge."));
     expect(out).not.toContain('Open the OK editor');
   });
 

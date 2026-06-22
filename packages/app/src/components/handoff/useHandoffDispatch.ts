@@ -11,6 +11,7 @@ import {
   type HandoffScope,
   type HandoffTarget,
   type TargetData,
+  withSkillPointer,
 } from '@inkeep/open-knowledge-core';
 import { toast as sonnerToast } from 'sonner';
 import { useConfigContext } from '@/lib/config-context';
@@ -224,20 +225,19 @@ export function selectScopedPrompt(
   if (input.selection) {
     return composeSelectionPrompt({ ...input.selection, target });
   }
-  if (input.docContext !== null) {
-    return composeFilePrompt(input.docContext.relativePath, autoOpen, input.instruction);
-  }
-  if (input.folderRelativePath) {
-    return composeFolderPrompt(input.folderRelativePath, autoOpen, input.instruction);
-  }
-  if (input.createDescription !== undefined) {
-    return composeCreatePrompt(
-      input.createDescription,
-      autoOpen,
-      input.createScenario ?? 'new-project',
-    );
-  }
-  return composeEmptySpacePrompt(autoOpen, input.instruction);
+  const directive =
+    input.docContext !== null
+      ? composeFilePrompt(input.docContext.relativePath, autoOpen, input.instruction)
+      : input.folderRelativePath
+        ? composeFolderPrompt(input.folderRelativePath, autoOpen, input.instruction)
+        : input.createDescription !== undefined
+          ? composeCreatePrompt(
+              input.createDescription,
+              autoOpen,
+              input.createScenario ?? 'new-project',
+            )
+          : composeEmptySpacePrompt(autoOpen, input.instruction);
+  return withSkillPointer(directive);
 }
 
 export function composeTerminalLaunchPrompt(input: HandoffDispatchInput): string {

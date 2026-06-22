@@ -338,6 +338,7 @@ export {
   coercePackId,
   DEFAULT_PACK_ID,
   type FileEntry,
+  formatPackRationale,
   isKnownPackId,
   LOG_MD_TEMPLATE,
   listStarterPacks,

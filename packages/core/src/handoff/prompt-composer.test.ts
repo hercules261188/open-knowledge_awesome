@@ -8,6 +8,7 @@ import {
   composeFilePrompt,
   composeFolderPrompt,
   composeSelectionPrompt,
+  withSkillPointer,
 } from './prompt-composer.ts';
 import type { HandoffPayload, HandoffTarget } from './types.ts';
 
@@ -198,9 +199,9 @@ test('composeEmptySpacePrompt blockquotes every line of a multi-line instruction
 test('directive composers keep the dispatched URL within 4096 chars for an oversized instruction (every target)', () => {
   const hugeInstruction = 'please tighten this prose for clarity and concision '.repeat(200);
   const composed = [
-    composeFilePrompt('specs/deep/nested/SPEC.md', true, hugeInstruction),
-    composeFolderPrompt('specs/deep/nested', true, hugeInstruction),
-    composeEmptySpacePrompt(true, hugeInstruction),
+    withSkillPointer(composeFilePrompt('specs/deep/nested/SPEC.md', true, hugeInstruction)),
+    withSkillPointer(composeFolderPrompt('specs/deep/nested', true, hugeInstruction)),
+    withSkillPointer(composeEmptySpacePrompt(true, hugeInstruction)),
   ];
   for (const target of ALL_TARGETS) {
     for (const prompt of composed) {

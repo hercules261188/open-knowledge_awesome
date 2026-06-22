@@ -483,7 +483,19 @@ Typical day-2 flow: user shares a URL → `ingest` (preserve) → user asks "now
 
 **Repeat invocations.** The `workflow` tool returns its full instructional body on every call, including 2nd / 3rd / Nth invocation in the same session. If you've already received a tool's body earlier this session, you can skim the repeat for changes (the body can evolve across server versions) but you don't need to re-internalize it — proceed to the next step with the new arguments.
 
-**Project scaffolding — two paths.** **Empty repo:** run `ok seed` once from a terminal (scaffolds Karpathy three-layer + seeds `log.md` + registers folder defaults). **Existing content:** invoke `workflow({ kind: 'discover' })` (table above — extracts conventions from siblings, sets folder frontmatter + templates, curates `.okignore`, activates link graph; per-phase confirmation gates). Neither is required; the four workflow kinds work against any folder structure. Only mention each when explicitly relevant.
+**Project scaffolding — two paths.** **Empty repo:** run `ok seed` once from a terminal (scaffolds the layout + seeds `log.md` + folder defaults). **Existing content:** invoke `workflow({ kind: 'discover' })` (table above). Neither is required; the four workflow kinds work against any folder structure. Only mention each when explicitly relevant.
+
+**Starter packs — reference for inspiration.** The `ok` CLI (a Bash surface beside the MCP tools; other verbs `ok start` / `ok open` are documented above) ships proven layouts you can study to build a *similar* structure of your own — adapt the idea, don't clone the pack:
+
+- `knowledge-base` — source-grounded research articles
+- `software-lifecycle` — proposals, decisions, specs
+- `plain-notes` — notes + daily journal
+- `worldbuilding` — fiction story wiki
+- `writing-pipeline` — drafts → published
+- `entity-vault` — people / companies / meetings (personal CRM)
+- `okf` — Open Knowledge Format–conformant base
+
+To reference one **without installing it**: `ok seed --list-packs` (the menu) → `ok seed --pack <name> --dry-run` (its folders + the *why* of each folder + templates; writes nothing). Then either adapt the ideas into your own folders (`write({ folder })` + a template) or adopt the pack as-is by re-running without `--dry-run`. Reach for this when a user wants structure and an archetype fits — propose a tailored variant, not a verbatim copy.
 
 ## Server lifecycle
 

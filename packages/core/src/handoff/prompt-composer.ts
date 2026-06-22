@@ -34,6 +34,13 @@ function sanitizePathForAtMention(path: string): string {
   return path.replace(AT_MENTION_PATH_INJECTION_SANITIZE_RE, '_');
 }
 
+export const OK_PROJECT_SKILL_POINTER =
+  "This is an Open Knowledge project: load the `open-knowledge` skill and use the Open Knowledge MCP tools for all markdown — don't probe for `.ok/` or use native file tools on `.md` / `.mdx`.";
+
+export function withSkillPointer(directive: string): string {
+  return `${OK_PROJECT_SKILL_POINTER} ${directive}`;
+}
+
 export function composeFilePrompt(
   relativePath: string,
   autoOpen: boolean,
@@ -112,6 +119,10 @@ const URL_OVERHEAD_RESERVE = 1024;
  *  to locus mode. */
 const INLINE_PROMPT_ENCODED_BUDGET = MAX_HANDOFF_URL_LENGTH - URL_OVERHEAD_RESERVE;
 
+const POINTER_ENCODED_RESERVE = encodedPromptLength(`${OK_PROJECT_SKILL_POINTER} `, 'cursor');
+const DIRECTIVE_INLINE_PROMPT_ENCODED_BUDGET =
+  INLINE_PROMPT_ENCODED_BUDGET - POINTER_ENCODED_RESERVE;
+
 const LOCUS_ANCHOR_MAX_CHARS = 160;
 
 const MIN_FENCE_LENGTH = 3;
@@ -184,9 +195,9 @@ function fitInstruction(
   compose: (instruction: string) => string,
   instruction: string,
   target: HandoffTarget,
+  budget: number = INLINE_PROMPT_ENCODED_BUDGET,
 ): string {
-  const fits = (instr: string): boolean =>
-    encodedPromptLength(compose(instr), target) <= INLINE_PROMPT_ENCODED_BUDGET;
+  const fits = (instr: string): boolean => encodedPromptLength(compose(instr), target) <= budget;
   if (fits(instruction)) return instruction;
   const codePoints = Array.from(instruction);
   let lo = 0;
@@ -206,6 +217,7 @@ function fitInstructionForDirective(directive: string, instruction: string): str
     (instr) => directiveWithInstruction(directive, instr),
     instruction,
     'cursor',
+    DIRECTIVE_INLINE_PROMPT_ENCODED_BUDGET,
   );
 }
 

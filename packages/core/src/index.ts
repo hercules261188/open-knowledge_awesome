@@ -369,11 +369,13 @@ export {
   type IpcChannelReason,
   type IpcChannelWithUrn,
   lookupUrnInRegistry,
+  OK_PROJECT_SKILL_POINTER,
   shellSingleQuote,
   type TargetData,
   URN_HTTP_ONLY,
   URN_IPC_REGISTRY,
   type UrnIpcLookup,
+  withSkillPointer,
 } from './handoff/index.ts';
 export type {
   BundleManifest,

@@ -8,6 +8,8 @@ export {
   composeFilePrompt,
   composeFolderPrompt,
   composeSelectionPrompt,
+  OK_PROJECT_SKILL_POINTER,
+  withSkillPointer,
 } from './prompt-composer.ts';
 export { buildClaudeLaunchCommand, shellSingleQuote } from './terminal-launch.ts';
 export type {
