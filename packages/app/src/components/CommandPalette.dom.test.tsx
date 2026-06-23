@@ -40,6 +40,7 @@ const installedAgentStates = {
 };
 const workspaceValue = { rootPath: '/workspace' };
 let pageListLoading = false;
+const COMMAND_PALETTE_POLL_GRACE_MS = 1400;
 
 mock.module('@lingui/react/macro', () => ({
   Trans: ({ children }: { children?: ReactNode }) => <>{children}</>,
@@ -427,6 +428,103 @@ describe('CommandPalette DOM behavior', () => {
       expect(fetchMock.mock.calls.some((call) => call[0] === '/api/search')).toBe(true),
     );
     expect(screen.queryByTestId('command-palette-search-preparing')).toBeNull();
+  });
+
+  test('server warming (ready:false) shows the preparing state and polls until the index is ready', async () => {
+    let searchCalls = 0;
+    globalThis.fetch = mock((input: unknown) => {
+      if (input === '/api/search') {
+        searchCalls += 1;
+        const body =
+          searchCalls >= 2
+            ? { results: [{ kind: 'page', path: 'arch', title: 'Arch' }], ready: true }
+            : { results: [], ready: false };
+        return Promise.resolve(new Response(JSON.stringify(body), { status: 200 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify({ results: [] }), { status: 200 }));
+    }) as never;
+
+    await renderPalette({ bridge: null });
+    await setQuery('arch');
+
+    await waitFor(() =>
+      expect(screen.getByTestId('command-palette-search-preparing')).not.toBeNull(),
+    );
+    expect(screen.queryByText('Search failed.')).toBeNull();
+
+    await waitFor(() => expect(searchCalls).toBeGreaterThanOrEqual(2), { timeout: 3000 });
+    await waitFor(() =>
+      expect(screen.queryByTestId('command-palette-search-preparing')).toBeNull(),
+    );
+  });
+
+  test('closing the palette mid-warming stops the poll (no further /api/search calls)', async () => {
+    globalThis.fetch = mock((input: unknown) => {
+      if (input === '/api/search') {
+        return Promise.resolve(
+          new Response(JSON.stringify({ results: [], ready: false }), { status: 200 }),
+        );
+      }
+      return Promise.resolve(new Response(JSON.stringify({ results: [] }), { status: 200 }));
+    }) as never;
+
+    const { CommandPalette } = await import('./CommandPalette');
+    const onOpenChange = mock(() => {});
+    const { rerender } = render(
+      <CommandPalette bridge={null} open={true} onOpenChange={onOpenChange} />,
+    );
+    await waitFor(() => expect(screen.getByRole('dialog')).not.toBeNull());
+    await setQuery('arch');
+    await waitFor(() =>
+      expect(screen.getByTestId('command-palette-search-preparing')).not.toBeNull(),
+    );
+
+    const fetchMock = globalThis.fetch as unknown as { mock: { calls: unknown[][] } };
+    const searchCalls = () =>
+      fetchMock.mock.calls.filter((call) => call[0] === '/api/search').length;
+    const callsAtClose = searchCalls();
+
+    rerender(<CommandPalette bridge={null} open={false} onOpenChange={onOpenChange} />);
+
+    await new Promise((resolve) => setTimeout(resolve, COMMAND_PALETTE_POLL_GRACE_MS));
+    expect(searchCalls()).toBe(callsAtClose);
+  });
+
+  test('a transient error while warming keeps polling and recovers, never showing "Search failed."', async () => {
+    let call = 0;
+    globalThis.fetch = mock((input: unknown) => {
+      if (input === '/api/search') {
+        call += 1;
+        if (call === 1) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ results: [], ready: false }), { status: 200 }),
+          );
+        }
+        if (call === 2) return Promise.reject(new Error('network blip'));
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              results: [{ kind: 'page', path: 'arch', title: 'Arch' }],
+              ready: true,
+            }),
+            { status: 200 },
+          ),
+        );
+      }
+      return Promise.resolve(new Response(JSON.stringify({ results: [] }), { status: 200 }));
+    }) as never;
+
+    await renderPalette({ bridge: null });
+    await setQuery('arch');
+    await waitFor(() =>
+      expect(screen.getByTestId('command-palette-search-preparing')).not.toBeNull(),
+    );
+
+    await waitFor(() => expect(call).toBeGreaterThanOrEqual(3), { timeout: 3000 });
+    expect(screen.queryByText('Search failed.')).toBeNull();
+    await waitFor(() =>
+      expect(screen.queryByTestId('command-palette-search-preparing')).toBeNull(),
+    );
   });
 });
 

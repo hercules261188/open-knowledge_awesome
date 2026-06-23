@@ -25,6 +25,8 @@ export const DESCRIPTION = [
   '',
   'Returns scored `page`, `folder`, and name-only `file` hits, each with a `signals` breakdown (lexical / fullText / recency / vector); markdown `page` hits also carry a body snippet (`file` hits never do — name-only). `exec`-grep covers every content occurrence and needs no server.',
   '',
+  'Cold start: right after the server boots, the response may carry `ready: false` with an empty `results` while the index is still building. That empty set is NOT authoritative — wait ~2-3 seconds, then retry (agents have no built-in delay, so do not retry in immediate succession). If it is still `ready: false` after 2-3 retries (e.g. a very large workspace), fall back to `exec("grep ...")` rather than polling further. Once `ready` is true/omitted the results are complete.',
+  '',
   '**Parameters:**',
   '- `query` — Free-form; tokenized across title, name, path segments, and (with `full_text`) body.',
   '- `intent` (optional) — `omnibar` searches title/path/folders only (fast); `full_text` includes body. Default `full_text`.',
@@ -99,6 +101,7 @@ const OutputSchema = outputSchemaWithText({
   results: z.array(SearchResultRowSchema),
   elapsedMs: z.number().nullable(),
   semantic: SearchSemanticStatusSchema.optional(),
+  ready: z.literal(false).optional(),
 });
 
 type SearchKind = 'page' | 'folder' | 'file';
@@ -126,6 +129,7 @@ interface SearchApiResponse {
   results?: SearchApiRow[];
   elapsedMs?: number;
   semantic?: SearchApiSemanticStatus;
+  ready?: boolean;
   [key: string]: unknown;
 }
 
@@ -155,6 +159,7 @@ interface SearchStructuredResult {
   results: SearchResultRow[];
   elapsedMs: number | null;
   semantic?: SearchSemanticStatus;
+  ready?: false;
 }
 
 function isSearchKind(value: unknown): value is SearchKind {
@@ -292,6 +297,7 @@ export function register(server: ServerInstance, deps: SearchDeps): void {
         });
 
         const semantic = normalizeSemanticStatus(result.semantic);
+        const ready = result.ready !== false;
         const structured: SearchStructuredResult = {
           cwd,
           query: args.query,
@@ -300,12 +306,14 @@ export function register(server: ServerInstance, deps: SearchDeps): void {
           results: rows,
           elapsedMs: typeof result.elapsedMs === 'number' ? result.elapsedMs : null,
           ...(semantic ? { semantic } : {}),
+          ...(ready ? {} : { ready: false }),
         };
 
         const header = `## Search results for "${args.query}" (${rows.length} hit${rows.length === 1 ? '' : 's'}, intent: ${intent})`;
         const semanticNote = formatSemanticNote(semantic);
-        const resultsText =
-          rows.length === 0
+        const resultsText = !ready
+          ? `The workspace search index is still warming — results for "${args.query}" are not ready yet. Wait ~2-3 seconds, then retry; if it is still warming after 2-3 retries, use \`exec("grep ...")\` for an index-free search instead.`
+          : rows.length === 0
             ? `No matches for "${args.query}".`
             : `${header}\n\n${formatResultsBlock(rows)}`;
         const text = semanticNote ? `${resultsText}\n${semanticNote}` : resultsText;

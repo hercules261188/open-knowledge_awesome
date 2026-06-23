@@ -448,3 +448,40 @@ describe('search MCP tool — error paths', () => {
     expect(text).toContain('Query is too long');
   });
 });
+
+describe('search MCP tool — cold-start warming', () => {
+  test('ready:false surfaces a retry hint (not "No matches") and propagates ready:false', async () => {
+    mockFetchOk({ ok: true, query: 'arch', intent: 'full_text', results: [], ready: false });
+    const { server, registered } = makeFakeServer();
+    register(server, {
+      resolveCwd: async () => '/tmp/proj',
+      config: DEFAULT_CONFIG,
+      serverUrl: 'http://localhost:1234',
+    });
+    const tool = expectOneRegisteredTool(registered);
+    const result = await tool.handler({ query: 'arch', cwd: '/tmp/proj' });
+
+    const text = result.content?.find((c) => c.type === 'text')?.text ?? '';
+    expect(text).toContain('still warming');
+    expect(text).not.toContain('No matches');
+    const structured = result.structuredContent as { ready?: unknown; resultCount: number };
+    expect(structured.ready).toBe(false);
+    expect(structured.resultCount).toBe(0);
+  });
+
+  test('ready:true serves results with no warming text and omits the ready flag', async () => {
+    mockFetchOk({ ok: true, query: 'arch', intent: 'full_text', results: [], ready: true });
+    const { server, registered } = makeFakeServer();
+    register(server, {
+      resolveCwd: async () => '/tmp/proj',
+      config: DEFAULT_CONFIG,
+      serverUrl: 'http://localhost:1234',
+    });
+    const tool = expectOneRegisteredTool(registered);
+    const result = await tool.handler({ query: 'arch', cwd: '/tmp/proj' });
+
+    const text = result.content?.find((c) => c.type === 'text')?.text ?? '';
+    expect(text).not.toContain('still warming');
+    expect((result.structuredContent as { ready?: unknown }).ready).toBeUndefined();
+  });
+});

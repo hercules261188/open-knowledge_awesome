@@ -216,6 +216,7 @@ export const SearchSuccessSchema = z
     elapsedMs: z.number().nonnegative(),
     semantic: SearchSemanticStatusSchema.optional(),
     truncated: z.boolean().optional(),
+    ready: z.boolean().optional(),
   })
   .loose() satisfies StandardSchemaV1;
 export type SearchSuccess = z.infer<typeof SearchSuccessSchema>;

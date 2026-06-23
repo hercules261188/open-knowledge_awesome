@@ -87,6 +87,8 @@ import { buildHandoffInput, useHandoffDispatch } from './handoff/useHandoffDispa
 import { useInstalledAgents } from './handoff/useInstalledAgents';
 
 const COMMAND_PALETTE_SEARCH_TIMEOUT_MS = 3000;
+const COMMAND_PALETTE_SEARCH_WARMING_POLL_MS = 600;
+const COMMAND_PALETTE_SEARCH_MAX_WARMING_POLLS = 20;
 
 export const runWithToast = (
   fn: () => Promise<void>,
@@ -233,6 +235,7 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
     'idle',
   );
   const [searchTruncated, setSearchTruncated] = useState(false);
+  const [searchIndexWarming, setSearchIndexWarming] = useState(false);
   const [isSemanticMode, setIsSemanticMode] = useState(false);
   const [semanticResults, setSemanticResults] = useState<WorkspaceSearchEntry[]>([]);
   const [semanticFiredQuery, setSemanticFiredQuery] = useState<string | null>(null);
@@ -430,38 +433,76 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
       setSearchResults([]);
       setSearchStatus('idle');
       setSearchTruncated(false);
+      setSearchIndexWarming(false);
       return;
     }
 
-    const controller = new AbortController();
+    let cancelled = false;
+    let everWarming = false;
+    let warmingPolls = 0;
+    let activeController: AbortController | null = null;
+    let timeoutTimer: number | undefined;
+    let retryTimer: number | undefined;
     setSearchStatus('loading');
-    let timedOut = false;
-    const timeout = window.setTimeout(() => {
-      timedOut = true;
-      controller.abort();
+
+    const scheduleWarmingRetry = (): boolean => {
+      if (cancelled || warmingPolls >= COMMAND_PALETTE_SEARCH_MAX_WARMING_POLLS) return false;
+      warmingPolls += 1;
+      retryTimer = window.setTimeout(run, COMMAND_PALETTE_SEARCH_WARMING_POLL_MS);
+      return true;
+    };
+
+    const settleErrorOrRetry = () => {
+      if (cancelled) return;
+      if (everWarming && scheduleWarmingRetry()) return;
       setSearchResults([]);
       setSearchStatus('error');
       setSearchTruncated(false);
-    }, COMMAND_PALETTE_SEARCH_TIMEOUT_MS);
+      setSearchIndexWarming(false);
+    };
 
-    void fetchWorkspaceSearchEntries(trimmedDeferredQuery, { signal: controller.signal })
-      .then(({ entries, truncated }) => {
-        window.clearTimeout(timeout);
-        setSearchResults(entries);
-        setSearchTruncated(truncated);
-        setSearchStatus('success');
-      })
-      .catch((error: unknown) => {
-        window.clearTimeout(timeout);
-        if (error instanceof Error && error.name === 'AbortError' && !timedOut) return;
-        setSearchResults([]);
-        setSearchStatus('error');
-        setSearchTruncated(false);
-      });
+    function run() {
+      const controller = new AbortController();
+      activeController = controller;
+      timeoutTimer = window.setTimeout(() => {
+        controller.abort();
+        settleErrorOrRetry();
+      }, COMMAND_PALETTE_SEARCH_TIMEOUT_MS);
+
+      void fetchWorkspaceSearchEntries(trimmedDeferredQuery, { signal: controller.signal })
+        .then(({ entries, truncated, ready }) => {
+          window.clearTimeout(timeoutTimer);
+          if (cancelled) return;
+          if (!ready) {
+            if (!everWarming) {
+              everWarming = true;
+              setSearchResults([]);
+              setSearchTruncated(false);
+              setSearchIndexWarming(true);
+              setSearchStatus('success');
+            }
+            if (!scheduleWarmingRetry()) setSearchIndexWarming(false);
+            return;
+          }
+          setSearchResults(entries);
+          setSearchTruncated(truncated);
+          setSearchIndexWarming(false);
+          setSearchStatus('success');
+        })
+        .catch((error: unknown) => {
+          window.clearTimeout(timeoutTimer);
+          if (cancelled) return;
+          if (error instanceof Error && error.name === 'AbortError') return;
+          settleErrorOrRetry();
+        });
+    }
+    run();
 
     return () => {
-      window.clearTimeout(timeout);
-      controller.abort();
+      cancelled = true;
+      window.clearTimeout(timeoutTimer);
+      window.clearTimeout(retryTimer);
+      activeController?.abort();
     };
   }, [open, trimmedDeferredQuery, inExclusiveMode, pagesLoading]);
 
@@ -497,13 +538,17 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
     searchStatus,
   });
   const showNavigation = !inExclusiveMode && visibleSearchResults.length > 0;
+  const showSearchPreparing =
+    !inExclusiveMode &&
+    trimmedDeferredQuery !== '' &&
+    (pagesLoading || searchIndexWarming) &&
+    !showNavigation;
   const showSearchLoading =
     !inExclusiveMode &&
     trimmedDeferredQuery !== '' &&
     searchStatus === 'loading' &&
-    !showNavigation;
-  const showSearchPreparing =
-    !inExclusiveMode && trimmedDeferredQuery !== '' && pagesLoading && !showNavigation;
+    !showNavigation &&
+    !showSearchPreparing;
   const showCreateFile =
     !inExclusiveMode && matchesCommandQuery(t`New file`, deferredQuery, ['create file']);
   const showCreateFolder =

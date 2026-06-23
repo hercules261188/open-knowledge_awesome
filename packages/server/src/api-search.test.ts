@@ -702,3 +702,117 @@ describe('GET /api/search — dot-path searchability', () => {
     }
   });
 });
+
+describe('GET /api/search — cold-start readiness', () => {
+  async function onRequest(ext: ReturnType<typeof createApiExtension>, url: string) {
+    const req = makeReq('GET', url);
+    const { res, captured } = makeRes();
+    await (
+      ext as {
+        onRequest: (ctx: { request: IncomingMessage; response: ServerResponse }) => Promise<void>;
+      }
+    ).onRequest({ request: req, response: res });
+    return captured;
+  }
+
+  test('answers ready:false with empty results while the boot index is warming, then ready:true with results once the boot gate resolves', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ok-search-warming-'));
+    try {
+      mkdirSync(join(dir, 'architecture'), { recursive: true });
+      writeFileSync(join(dir, 'architecture/overview.md'), '# System Overview\n', 'utf-8');
+      const fileIndex = buildFileIndex(dir);
+
+      let resolveReady: () => void = () => {};
+      const ready = new Promise<void>((resolve) => {
+        resolveReady = resolve;
+      });
+      const ext = createApiExtension({
+        hocuspocus: {} as unknown as Parameters<typeof createApiExtension>[0]['hocuspocus'],
+        sessionManager: {} as unknown as Parameters<typeof createApiExtension>[0]['sessionManager'],
+        contentDir: dir,
+        serverInstanceId: 'test-server',
+        getFileIndex: () => fileIndex,
+        ready,
+      });
+
+      const warming = JSON.parse((await onRequest(ext, '/api/search?query=overview')).body) as {
+        ready?: boolean;
+        results?: unknown[];
+      };
+      expect(warming.ready).toBe(false);
+      expect(warming.results).toEqual([]);
+
+      resolveReady();
+      await ready;
+      await new Promise((r) => setTimeout(r, 0));
+
+      const captured = await onRequest(ext, '/api/search?query=overview');
+      expect(captured.status).toBe(200);
+      const settled = JSON.parse(captured.body) as {
+        ready?: boolean;
+        results?: Array<{ path: string }>;
+      };
+      expect(settled.ready).toBe(true);
+      expect(settled.results?.some((row) => row.path === 'architecture/overview')).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('a rejected boot gate flips to ready so search does not warm forever (degraded boot)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ok-search-rejected-gate-'));
+    try {
+      writeFileSync(join(dir, 'guide.md'), '# Guide\n', 'utf-8');
+      const fileIndex = buildFileIndex(dir);
+
+      let rejectReady: (err: Error) => void = () => {};
+      const ready = new Promise<void>((_resolve, reject) => {
+        rejectReady = reject;
+      });
+      ready.catch(() => {});
+      const ext = createApiExtension({
+        hocuspocus: {} as unknown as Parameters<typeof createApiExtension>[0]['hocuspocus'],
+        sessionManager: {} as unknown as Parameters<typeof createApiExtension>[0]['sessionManager'],
+        contentDir: dir,
+        serverInstanceId: 'test-server',
+        getFileIndex: () => fileIndex,
+        ready,
+      });
+
+      rejectReady(new Error('init failed'));
+      await new Promise((r) => setTimeout(r, 0));
+
+      const body = JSON.parse((await onRequest(ext, '/api/search?query=guide')).body) as {
+        ready?: boolean;
+        results?: Array<{ path: string }>;
+      };
+      expect(body.ready).toBe(true);
+      expect(body.results?.some((row) => row.path === 'guide')).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('without a boot gate (test/library harness), search is ready immediately', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ok-search-nogate-'));
+    try {
+      writeFileSync(join(dir, 'guide.md'), '# Guide\n', 'utf-8');
+      const fileIndex = buildFileIndex(dir);
+      const ext = createApiExtension({
+        hocuspocus: {} as unknown as Parameters<typeof createApiExtension>[0]['hocuspocus'],
+        sessionManager: {} as unknown as Parameters<typeof createApiExtension>[0]['sessionManager'],
+        contentDir: dir,
+        serverInstanceId: 'test-server',
+        getFileIndex: () => fileIndex,
+      });
+      const body = JSON.parse((await onRequest(ext, '/api/search?query=guide')).body) as {
+        ready?: boolean;
+        results?: Array<{ path: string }>;
+      };
+      expect(body.ready).toBe(true);
+      expect(body.results?.some((row) => row.path === 'guide')).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

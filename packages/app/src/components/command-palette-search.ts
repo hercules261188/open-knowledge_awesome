@@ -209,11 +209,13 @@ interface WorkspaceSearchApiResponse {
     score?: number;
   }>;
   truncated?: boolean;
+  ready?: boolean;
 }
 
 export interface WorkspaceSearchFetchResult {
   entries: WorkspaceSearchEntry[];
   truncated: boolean;
+  ready: boolean;
 }
 
 function toWorkspaceSearchEntry(
@@ -241,7 +243,7 @@ export async function fetchWorkspaceSearchEntries(
   options: { signal?: AbortSignal; limit?: number; semantic?: boolean } = {},
 ): Promise<WorkspaceSearchFetchResult> {
   const normalizedQuery = query.trim();
-  if (!normalizedQuery) return { entries: [], truncated: false };
+  if (!normalizedQuery) return { entries: [], truncated: false, ready: true };
 
   const response = await fetch('/api/search', {
     method: 'POST',
@@ -265,7 +267,7 @@ export async function fetchWorkspaceSearchEntries(
   const payload = (await response.json()) as WorkspaceSearchApiResponse;
   const entries = (payload.results ?? []).map(toWorkspaceSearchEntry).filter((entry) => !!entry);
 
-  return { entries, truncated: payload.truncated === true };
+  return { entries, truncated: payload.truncated === true, ready: payload.ready !== false };
 }
 
 export function matchesCommandQuery(

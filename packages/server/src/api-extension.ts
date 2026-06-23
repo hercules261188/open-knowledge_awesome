@@ -10426,6 +10426,15 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
     source: SearchSource;
   }): Promise<SearchSuccess> {
     const startedAt = performance.now();
+    if (isSearchCorpusWarming()) {
+      return {
+        query: params.query,
+        intent: params.intent,
+        results: [],
+        elapsedMs: Math.max(0, performance.now() - startedAt),
+        ready: false,
+      };
+    }
     const { corpus, truncated } = await getWorkspaceSearchCorpus();
     const semantic = await resolveSemantic(
       params.query,
@@ -10473,6 +10482,7 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
       intent: params.intent,
       results: entries,
       elapsedMs: Math.max(0, performance.now() - startedAt),
+      ready: true,
       ...(semanticStatus ? { semantic: semanticStatus } : {}),
       ...(truncated ? { truncated: true } : {}),
     };
@@ -10558,6 +10568,24 @@ export function createApiExtension(options: ApiExtensionOptions): Extension {
           `${docName} ${entry.modified} ${entry.size} ${entry.canonicalPath} ${entry.inode} ${entry.aliases.join(',')}`,
       )
       .join('');
+  }
+
+  let bootIndexReady = ready === undefined;
+  ready?.then(
+    () => {
+      bootIndexReady = true;
+    },
+    (err: unknown) => {
+      bootIndexReady = true;
+      log.warn(
+        { err, handler: 'search' },
+        '[api] ready gate rejected — search serves the partial index',
+      );
+    },
+  );
+
+  function isSearchCorpusWarming(): boolean {
+    return !bootIndexReady;
   }
 
   async function getWorkspaceSearchCorpus(): Promise<{
