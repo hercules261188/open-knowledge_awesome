@@ -432,7 +432,7 @@ interface AddPropertyRowProps {
   onChangeName: (next: string) => void;
   onChangeType: (next: FrontmatterType) => void;
   onChangeValue: (next: FrontmatterValue) => void;
-  onCommit: () => void;
+  onCommit: (valueOverride?: FrontmatterValue) => void;
   onCancel: () => void;
 }
 
@@ -493,13 +493,14 @@ export function AddPropertyRow({
             widgetType={draft.type}
             path={ADD_ROW_PATH}
             onCommit={onChangeValue}
+            onSubmit={onCommit}
           />
         </div>
 
         <Button
           type="button"
           data-testid="add-property-commit"
-          onClick={onCommit}
+          onClick={() => onCommit()}
           disabled={isAddDisabled}
           size="sm"
           className="rounded bg-primary text-xs text-primary-foreground hover:bg-primary/90"
@@ -538,9 +539,10 @@ interface WidgetProps {
   widgetType: FrontmatterType;
   path: ReadonlyArray<string | number>;
   onCommit: (next: FrontmatterValue) => void;
+  onSubmit?: (next: FrontmatterValue) => void;
 }
 
-function Widget({ keyName, value, widgetType, path, onCommit }: WidgetProps) {
+function Widget({ keyName, value, widgetType, path, onCommit, onSubmit }: WidgetProps) {
   if (keyName === 'icon') {
     const str = typeof value === 'string' ? value : '';
     return <PageIconWidget keyName={keyName} value={str} onCommit={onCommit} />;
@@ -572,15 +574,15 @@ function Widget({ keyName, value, widgetType, path, onCommit }: WidgetProps) {
   }
   if (widgetType === 'number') {
     const num = typeof value === 'number' ? value : 0;
-    return <NumberWidget keyName={keyName} value={num} onCommit={onCommit} />;
+    return <NumberWidget keyName={keyName} value={num} onCommit={onCommit} onSubmit={onSubmit} />;
   }
   if (widgetType === 'date') {
     const str = typeof value === 'string' ? value : '';
-    return <DateWidget keyName={keyName} value={str} onCommit={onCommit} />;
+    return <DateWidget keyName={keyName} value={str} onCommit={onCommit} onSubmit={onSubmit} />;
   }
   const str =
     typeof value === 'string' ? value : Array.isArray(value) ? value.join(', ') : String(value);
-  return <TextWidget keyName={keyName} value={str} onCommit={onCommit} />;
+  return <TextWidget keyName={keyName} value={str} onCommit={onCommit} onSubmit={onSubmit} />;
 }
 
 export function InheritedBadge({

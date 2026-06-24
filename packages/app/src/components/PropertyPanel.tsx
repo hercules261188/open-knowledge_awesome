@@ -23,6 +23,7 @@ import {
   fieldErrorsFromError,
   frontmatterValuesEqual,
   inferType,
+  isFrontmatterValueEmpty,
   readFmKeys,
   readFmRegionWithError,
 } from '@inkeep/open-knowledge-core';
@@ -239,29 +240,34 @@ export function PropertyPanel({ provider }: PropertyPanelProps) {
     setAdding((prev) => (prev ? { ...prev, name, error: null } : prev));
   }
 
-  function commitAdd() {
+  function commitAdd(valueOverride?: FrontmatterValue) {
     if (!adding) return;
+    const value = valueOverride ?? adding.value;
     const trimmed = adding.name.trim();
     if (!trimmed) {
-      setAdding({ ...adding, error: t`Name is required` });
+      setAdding({ ...adding, value, error: t`Name is required` });
+      return;
+    }
+    if (isFrontmatterValueEmpty(value)) {
+      setAdding({ ...adding, value, error: t`Value is required` });
       return;
     }
     if (trimmed === 'frontmatter') {
-      setAdding({ ...adding, error: t`"frontmatter" is a reserved property name` });
+      setAdding({ ...adding, value, error: t`"frontmatter" is a reserved property name` });
       return;
     }
     if (Object.hasOwn(map, trimmed)) {
-      setAdding({ ...adding, error: t`Property "${trimmed}" already exists` });
+      setAdding({ ...adding, value, error: t`Property "${trimmed}" already exists` });
       return;
     }
-    const result = commitPatch({ [trimmed]: adding.value });
+    const result = commitPatch({ [trimmed]: value });
     if (result.ok) {
       setAdding(null);
       return;
     }
     const fieldError = result.fieldErrors?.[trimmed];
     const generic = result.error ?? t`Failed to add property`;
-    setAdding({ ...adding, error: fieldError ?? generic });
+    setAdding({ ...adding, value, error: fieldError ?? generic });
   }
 
   function cancelAdd() {

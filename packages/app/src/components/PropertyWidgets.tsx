@@ -45,9 +45,10 @@ export interface CommonWidgetProps<T extends FrontmatterValue> {
   keyName: string;
   value: T;
   onCommit: (next: T) => void;
+  onSubmit?: (next: T) => void;
 }
 
-export function TextWidget({ keyName, value, onCommit }: CommonWidgetProps<string>) {
+export function TextWidget({ keyName, value, onCommit, onSubmit }: CommonWidgetProps<string>) {
   const { t } = useLingui();
   const [draft, setDraft] = useState(value);
   const focusedRef = useRef(false);
@@ -155,7 +156,8 @@ export function TextWidget({ keyName, value, onCommit }: CommonWidgetProps<strin
         if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
           e.preventDefault();
           if (draft !== value) onCommit(draft);
-          (e.currentTarget as HTMLTextAreaElement).blur();
+          if (onSubmit) onSubmit(draft);
+          else (e.currentTarget as HTMLTextAreaElement).blur();
         } else if (e.key === 'Escape') {
           e.preventDefault();
           revertingRef.current = true;
@@ -168,7 +170,7 @@ export function TextWidget({ keyName, value, onCommit }: CommonWidgetProps<strin
   );
 }
 
-export function NumberWidget({ keyName, value, onCommit }: CommonWidgetProps<number>) {
+export function NumberWidget({ keyName, value, onCommit, onSubmit }: CommonWidgetProps<number>) {
   const { t } = useLingui();
   const [draft, setDraft] = useState<string>(String(value));
   const focusedRef = useRef(false);
@@ -202,7 +204,14 @@ export function NumberWidget({ keyName, value, onCommit }: CommonWidgetProps<num
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          (e.currentTarget as HTMLInputElement).blur();
+          if (onSubmit) {
+            const parsed = Number.parseFloat(draft);
+            const next = Number.isFinite(parsed) ? parsed : 0;
+            if (next !== value) onCommit(next);
+            onSubmit(next);
+          } else {
+            (e.currentTarget as HTMLInputElement).blur();
+          }
         } else if (e.key === 'Escape') {
           e.preventDefault();
           revertingRef.current = true;
@@ -231,7 +240,7 @@ export function BooleanWidget({ keyName, value, onCommit }: CommonWidgetProps<bo
   );
 }
 
-export function DateWidget({ keyName, value, onCommit }: CommonWidgetProps<string>) {
+export function DateWidget({ keyName, value, onCommit, onSubmit }: CommonWidgetProps<string>) {
   const { t } = useLingui();
   const date = parseDate(value);
   const [inputValue, setInputValue] = useState(formatDateForInput(date));
@@ -248,17 +257,18 @@ export function DateWidget({ keyName, value, onCommit }: CommonWidgetProps<strin
     }
   }, [value]);
 
-  function commitInput() {
+  function commitInput(): string | undefined {
     const parsed = parseFromInput(inputValue);
     if (parsed) {
       const iso = format(parsed, 'yyyy-MM-dd');
       if (iso !== value) onCommit(iso);
       setInputValue(formatDateForInput(parsed));
       setMonth(parsed);
-    } else {
-      setInputValue(formatDateForInput(date));
-      setMonth(date);
+      return iso;
     }
+    setInputValue(formatDateForInput(date));
+    setMonth(date);
+    return undefined;
   }
 
   function handleCalendarSelect(selected: Date | undefined) {
@@ -296,8 +306,12 @@ export function DateWidget({ keyName, value, onCommit }: CommonWidgetProps<strin
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
-            commitInput();
-            (e.currentTarget as HTMLInputElement).blur();
+            const committed = commitInput();
+            if (onSubmit) {
+              if (committed !== undefined) onSubmit(committed);
+            } else {
+              (e.currentTarget as HTMLInputElement).blur();
+            }
           } else if (e.key === 'Escape') {
             e.preventDefault();
             revertingRef.current = true;

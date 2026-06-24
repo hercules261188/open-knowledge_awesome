@@ -6109,6 +6109,7 @@ msgid "Using the <0>OK_EMBEDDINGS_API_KEY</0> environment variable (managed outs
 msgstr "Using the <0>OK_EMBEDDINGS_API_KEY</0> environment variable (managed outside Open Knowledge)."
 
 #: src/components/FolderPropertiesCard.tsx
+#: src/components/PropertyPanel.tsx
 msgid "Value is required"
 msgstr "Value is required"
 
