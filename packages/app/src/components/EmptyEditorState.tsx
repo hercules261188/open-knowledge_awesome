@@ -5,8 +5,8 @@ import { CopyablePromptList } from '@/components/empty-state/CopyablePromptList'
 import { CreatePromptComposer } from '@/components/empty-state/CreatePromptComposer';
 import { CreateView } from '@/components/empty-state/CreateView';
 import { EmptyStateHeader } from '@/components/empty-state/EmptyStateHeader';
+import { getEmptyStateCopy } from '@/components/empty-state/empty-state-copy';
 import { filterVisibleEntries } from '@/components/file-tree-utils';
-import { OkBlob } from '@/components/OkBlob';
 import { PackCardGrid } from '@/components/PackCardGrid';
 import { SeedDialog } from '@/components/SeedDialog';
 import { useIsEmbedded } from '@/hooks/use-is-embedded';
@@ -85,8 +85,10 @@ export function EmptyEditorState({ terminalVisible = false }: { terminalVisible?
 
   if (terminalVisible) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-end px-6 pb-8 pt-10">
-        <OkBlob size={64} gaze="down" />
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-end px-6 sm:px-12 md:px-16 pb-8 pt-10">
+        {messageReady ? (
+          <TerminalEmptyHeader isOnboarding={isOnboarding} celebrateSignal={celebrateSignal} />
+        ) : null}
       </div>
     );
   }
@@ -129,6 +131,23 @@ export function countEntries(
   ).length;
 }
 
+function TerminalEmptyHeader({
+  isOnboarding,
+  celebrateSignal,
+}: {
+  isOnboarding: boolean;
+  celebrateSignal: number;
+}) {
+  const { t } = useLingui();
+  const isEmbedded = useIsEmbedded();
+  const { title, subtitle } = getEmptyStateCopy({ isOnboarding, isEmbedded });
+  return (
+    <div className="w-full max-w-5xl">
+      <EmptyStateHeader title={t(title)} subtitle={t(subtitle)} celebrateSignal={celebrateSignal} />
+    </div>
+  );
+}
+
 function OnboardingView({
   celebrateSignal,
   onPackSelect,
@@ -138,17 +157,10 @@ function OnboardingView({
 }) {
   const { t } = useLingui();
   const isEmbedded = useIsEmbedded();
+  const { title, subtitle } = getEmptyStateCopy({ isOnboarding: true, isEmbedded });
   return (
     <div className="flex w-full flex-col gap-10 py-12 max-w-5xl my-auto">
-      <EmptyStateHeader
-        title={t`What would you like to create?`}
-        subtitle={
-          isEmbedded
-            ? t`Copy a prompt and paste it into your agent to set up your project.`
-            : t`Describe what you're working on and the agent sets it up for you.`
-        }
-        celebrateSignal={celebrateSignal}
-      />
+      <EmptyStateHeader title={t(title)} subtitle={t(subtitle)} celebrateSignal={celebrateSignal} />
       {/* AI surface up top — the primary path. Non-embedded: compose a brief and
           hand off to a coding agent. Embedded (OK inside Cursor/Codex/Claude):
           show the same starter prompts as copy-to-paste rows, since the launch

@@ -4,6 +4,7 @@ import { ArrowRightIcon, Plus } from 'lucide-react';
 import { CopyablePromptList } from '@/components/empty-state/CopyablePromptList';
 import { CreatePromptComposer } from '@/components/empty-state/CreatePromptComposer';
 import { EmptyStateHeader } from '@/components/empty-state/EmptyStateHeader';
+import { getEmptyStateCopy } from '@/components/empty-state/empty-state-copy';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAllTemplates } from '@/hooks/use-folder-config';
@@ -18,6 +19,7 @@ interface CreateViewProps {
 export function CreateView({ celebrateSignal, onAddStarterPack }: CreateViewProps) {
   const { t } = useLingui();
   const isEmbedded = useIsEmbedded();
+  const { title, subtitle } = getEmptyStateCopy({ isOnboarding: false, isEmbedded });
   const templatesState = useAllTemplates();
   const initialDir = '';
 
@@ -27,15 +29,7 @@ export function CreateView({ celebrateSignal, onAddStarterPack }: CreateViewProp
 
   return (
     <div className="flex w-full flex-col gap-8 py-12 max-w-5xl my-auto">
-      <EmptyStateHeader
-        title={t`Create something great.`}
-        subtitle={
-          isEmbedded
-            ? t`Copy a prompt for your agent, start a blank file, or scaffold from a template.`
-            : t`Describe what you want to build, start a blank file, or scaffold from a template.`
-        }
-        celebrateSignal={celebrateSignal}
-      />
+      <EmptyStateHeader title={t(title)} subtitle={t(subtitle)} celebrateSignal={celebrateSignal} />
 
       {/* AI surface up top — the primary path. Non-embedded: compose a brief and
           hand off to a coding agent. Embedded (OK inside Cursor/Codex/Claude):

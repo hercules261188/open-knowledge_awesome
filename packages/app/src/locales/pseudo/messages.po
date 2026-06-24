@@ -1353,11 +1353,11 @@ msgstr ""
 msgid "Copy {0} prompt"
 msgstr ""
 
-#: src/components/EmptyEditorState.tsx
+#: src/components/empty-state/empty-state-copy.ts
 msgid "Copy a prompt and paste it into your agent to set up your project."
 msgstr ""
 
-#: src/components/empty-state/CreateView.tsx
+#: src/components/empty-state/empty-state-copy.ts
 msgid "Copy a prompt for your agent, start a blank file, or scaffold from a template."
 msgstr ""
 
@@ -1675,7 +1675,7 @@ msgstr ""
 msgid "Create page"
 msgstr ""
 
-#: src/components/empty-state/CreateView.tsx
+#: src/components/empty-state/empty-state-copy.ts
 msgid "Create something great."
 msgstr ""
 
@@ -1810,11 +1810,11 @@ msgstr ""
 msgid "Describe the project you want to create"
 msgstr ""
 
-#: src/components/empty-state/CreateView.tsx
+#: src/components/empty-state/empty-state-copy.ts
 msgid "Describe what you want to build, start a blank file, or scaffold from a template."
 msgstr ""
 
-#: src/components/EmptyEditorState.tsx
+#: src/components/empty-state/empty-state-copy.ts
 msgid "Describe what you're working on and the agent sets it up for you."
 msgstr ""
 
@@ -6228,7 +6228,7 @@ msgstr ""
 msgid "What should the AI do? (optional)"
 msgstr ""
 
-#: src/components/EmptyEditorState.tsx
+#: src/components/empty-state/empty-state-copy.ts
 msgid "What would you like to create?"
 msgstr ""
 
