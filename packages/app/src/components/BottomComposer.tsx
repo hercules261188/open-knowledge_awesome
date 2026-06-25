@@ -1,3 +1,4 @@
+
 import { type TargetData, TERMINAL_CLI_IDS, type TerminalCli } from '@inkeep/open-knowledge-core';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { ChevronDown, Loader2, SquareTerminal, TextQuote, X } from 'lucide-react';
@@ -94,21 +95,35 @@ function useRotatingSuggestion(
 export function BottomComposer({
   docName,
   surface,
+  folderPath,
   dismissed = false,
   onDismiss,
   onReopen,
 }: {
-  docName: string;
+  /** Doc mode: the active doc. The host supplies exactly one of
+   *  `docName` / `folderPath`. */
+  docName?: string | null;
   /** The active edit surface, so the live selection is read from the visible
-   *  editor (and source-mode selections can carry real line numbers). */
-  surface: EditorSurface;
+   *  editor (and source-mode selections can carry real line numbers). Doc mode
+   *  only — folder mode has no editor surface. */
+  surface?: EditorSurface;
+  /** Folder mode: the active folder's workspace-relative path (forward-slash
+   *  normalized, no trailing slash). When set, the composer is scoped to the
+   *  folder — the folder is the top-row context chip AND the dispatch lead —
+   *  instead of an open doc, and the doc-coupled affordances (selection passage,
+   *  touched-file lifecycle, scroll-inset/caret machinery) are skipped. */
+  folderPath?: string;
   /** When dismissed, the field collapses to nothing (the host shows a reopen
-   *  badge in the footer); the component stays mounted so ⌘L can reopen it. */
+   *  badge in the footer); the component stays mounted so ⌘L can reopen it. Doc
+   *  mode only — folder mode is always visible (no footer to dock a badge in). */
   dismissed?: boolean;
   onDismiss?: () => void;
   onReopen?: () => void;
 }) {
   const { t } = useLingui();
+  const folderMode = folderPath !== undefined;
+  const activeDocOrNull = folderMode ? null : (docName ?? null);
+  const effectiveSurface: EditorSurface = surface ?? 'wysiwyg';
   const reduced = useReducedMotion();
   const workspace = useWorkspace();
   const { states } = useInstalledAgents();
@@ -124,6 +139,7 @@ export function BottomComposer({
   const [initialDraftDoc] = useState(() => getComposerDraft().doc ?? undefined);
 
   useEffect(() => {
+    if (folderMode || docName == null) return;
     const root = document.documentElement;
     const followBottom = () => {
       const pinned = [...document.querySelectorAll<HTMLElement>('.editor-doc-scroll')].filter(
@@ -164,7 +180,8 @@ export function BottomComposer({
           if (overlap <= 0) return;
           const scroller = view.dom.closest('.editor-doc-scroll');
           if (scroller instanceof HTMLElement) scroller.scrollTop += overlap;
-        } catch {}
+        } catch {
+        }
       });
     };
     const card = cardRef.current;
@@ -186,7 +203,7 @@ export function BottomComposer({
       followBottom();
       root.style.removeProperty('--ask-composer-height');
     };
-  }, [dismissed, surface, docName]);
+  }, [dismissed, surface, docName, folderMode]);
 
   const dismissedRef = useRef(dismissed);
   const onReopenRef = useRef(onReopen);
@@ -227,21 +244,23 @@ export function BottomComposer({
   const [dismissedFiles, setDismissedFiles] = useState<ReadonlySet<string>>(() => new Set());
   const [inlineMentions, setInlineMentions] = useState<readonly string[]>([]);
 
-  const activeFilePath = docNameToRelativePath(docName);
+  const activeFilePath = folderMode || docName == null ? '' : docNameToRelativePath(docName);
   useEffect(() => {
-    if (isEmpty) return;
+    if (folderMode || isEmpty) return;
     setTouchedFiles((prev) => {
       if (prev.includes(activeFilePath) || dismissedFiles.has(activeFilePath)) return prev;
       return [...prev, activeFilePath];
     });
-  }, [isEmpty, activeFilePath, dismissedFiles]);
+  }, [folderMode, isEmpty, activeFilePath, dismissedFiles]);
 
-  const fileChips = touchedFiles.filter(
-    (path) => !dismissedFiles.has(path) && !inlineMentions.includes(path),
-  );
+  const fileChips = folderMode
+    ? folderPath && !dismissedFiles.has(folderPath) && !inlineMentions.includes(folderPath)
+      ? [folderPath]
+      : []
+    : touchedFiles.filter((path) => !dismissedFiles.has(path) && !inlineMentions.includes(path));
 
-  const liveSelection = useSelectionContext(docName, surface);
-  const liveFrontmatterSelection = useSelectionContext(docName, 'frontmatter');
+  const liveSelection = useSelectionContext(activeDocOrNull, effectiveSurface);
+  const liveFrontmatterSelection = useSelectionContext(activeDocOrNull, 'frontmatter');
   const [pinnedSelection, setPinnedSelection] = useState<SelectionSnapshot | null>(null);
   const [selectionExpanded, setSelectionExpanded] = useState(false);
   useEffect(() => {
@@ -314,30 +333,7 @@ export function BottomComposer({
     clearComposerDraft();
   };
 
-  const submit = () => {
-    if (!canSend) return;
-    const { instruction, mentions } = inputRef.current?.getContent() ?? {
-      instruction: '',
-      mentions: [],
-    };
-    const selection = pinnedSelection ? selectionSnapshotToCompose(pinnedSelection) : undefined;
-    const selectionDoc = pinnedSelection?.docName ?? null;
-    const leadDocName = pinnedSelection
-      ? selectionDoc
-      : fileChips.includes(activeFilePath)
-        ? docName
-        : null;
-    const leadPath = leadDocName !== null ? docNameToRelativePath(leadDocName) : null;
-    const dispatchMentions = [...new Set([...fileChips, ...mentions])].filter(
-      (path) => path !== leadPath,
-    );
-    const input = buildComposerHandoffInput({
-      docName: leadDocName,
-      workspace,
-      instruction,
-      mentions: dispatchMentions,
-      selection,
-    });
+  const dispatchComposed = (input: ReturnType<typeof buildComposerHandoffInput>) => {
     if (input === null) {
       toast.error(t`Couldn't send your prompt — please try again.`);
       return;
@@ -360,6 +356,51 @@ export function BottomComposer({
     });
   };
 
+  const submit = () => {
+    if (!canSend) return;
+    const { instruction, mentions } = inputRef.current?.getContent() ?? {
+      instruction: '',
+      mentions: [],
+    };
+
+    if (folderMode) {
+      const dispatchMentions = [...new Set([...fileChips, ...mentions])].filter(
+        (path) => path !== folderPath,
+      );
+      dispatchComposed(
+        buildComposerHandoffInput({
+          docName: null,
+          folderRelativePath: folderPath,
+          workspace,
+          instruction,
+          mentions: dispatchMentions,
+        }),
+      );
+      return;
+    }
+
+    const selection = pinnedSelection ? selectionSnapshotToCompose(pinnedSelection) : undefined;
+    const selectionDoc = pinnedSelection?.docName ?? null;
+    const leadDocName = pinnedSelection
+      ? selectionDoc
+      : fileChips.includes(activeFilePath)
+        ? (docName ?? null)
+        : null;
+    const leadPath = leadDocName !== null ? docNameToRelativePath(leadDocName) : null;
+    const dispatchMentions = [...new Set([...fileChips, ...mentions])].filter(
+      (path) => path !== leadPath,
+    );
+    dispatchComposed(
+      buildComposerHandoffInput({
+        docName: leadDocName,
+        workspace,
+        instruction,
+        mentions: dispatchMentions,
+        selection,
+      }),
+    );
+  };
+
   if (dismissed) return null;
 
   let pinnedLabel = '';
@@ -370,21 +411,16 @@ export function BottomComposer({
     pinnedPreview = lightRenderMarkdownPreview(pinnedSelection.markdown);
   }
 
-  return (
+  const card = (
     <div
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-20 editor-content-aligned bg-gradient-to-t from-background from-65% via-background to-transparent pt-10 pb-2"
-      data-testid="bottom-composer"
+      ref={cardRef}
+      className="pointer-events-auto group relative flex flex-col gap-1.5 rounded-2xl border border-border/60 bg-card px-3 py-2 shadow-sm transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50"
     >
-      {/* Self-contained rounded field: the card owns the border + focus ring so
-          the whole box lights up on focus (mirrors the empty-state composer). A
-          captured-selection pill, when present, is a full-width strip above the
-          input row, so the card stacks its children vertically. */}
-      <div
-        ref={cardRef}
-        className="pointer-events-auto group relative flex flex-col gap-1.5 rounded-2xl border border-border/60 bg-card px-3 py-2 shadow-sm transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50"
-      >
-        {/* Collapse handle — a small tab centered above the card's top edge,
-            revealed on hover/focus. Collapses the composer to the footer tab. */}
+      {/* Collapse handle — a small tab centered above the card's top edge,
+          revealed on hover/focus. Collapses the composer to the footer tab. Doc
+          mode only: the folder view has no footer to dock a reopen badge into,
+          so folder mode stays permanently expanded. */}
+      {!folderMode ? (
         <Button
           type="button"
           variant="outline"
@@ -395,160 +431,177 @@ export function BottomComposer({
         >
           <ChevronDown className="size-3.5" aria-hidden />
         </Button>
-        {/* One wrapping context row. The removable file-context chips (files
-            touched while drafting, minus dismissed / inline `@`-mentions; typed
-            `@`-mentions stay inline as their own chips) and the captured-selection
-            pill are siblings in a single flex-wrap row, so they sit on the same
-            line and only break to a second line on overflow. X'ing a file chip
-            sticky-dismisses its path for this draft. The expanded selection
-            preview carries `basis-full`, dropping onto its own line beneath the
-            chips. */}
-        <ComposerContextChips
-          files={fileChips}
-          onRemoveFile={(path) =>
-            setDismissedFiles((prev) => {
-              const next = new Set(prev);
-              next.add(path);
-              return next;
-            })
-          }
-        >
-          {pinnedSelection ? (
-            <>
-              <span
-                data-testid="composer-selection-pill"
-                className="group/chip inline-flex max-w-[16rem] items-center gap-1 rounded-md border bg-muted/40 py-0.5 pr-1.5 pl-1 text-muted-foreground text-xs"
+      ) : null}
+      {/* One wrapping context row. The removable file-context chips (files
+          touched while drafting, minus dismissed / inline `@`-mentions; in
+          folder mode the single chip is the folder scope) and the captured-
+          selection pill are siblings in a single flex-wrap row, so they sit on
+          the same line and only break to a second line on overflow. X'ing a file
+          chip sticky-dismisses its path for this draft. The expanded selection
+          preview carries `basis-full`, dropping onto its own line beneath the
+          chips. */}
+      <ComposerContextChips
+        files={fileChips}
+        onRemoveFile={(path) =>
+          setDismissedFiles((prev) => {
+            const next = new Set(prev);
+            next.add(path);
+            return next;
+          })
+        }
+      >
+        {pinnedSelection ? (
+          <>
+            <span
+              data-testid="composer-selection-pill"
+              className="group/chip inline-flex max-w-[16rem] items-center gap-1 rounded-md border bg-muted/40 py-0.5 pr-1.5 pl-1 text-muted-foreground text-xs"
+            >
+              {/* The LEADING glyph IS the remove control (mirrors the file chip):
+                  a fixed-size cell holding the selection's TextQuote glyph and an
+                  X, cross-faded by opacity on chip hover / `:focus-within` / button
+                  focus. The cell never resizes, so the pill box is identical at
+                  rest vs hover → no reflow. TextQuote stays the at-rest icon (this
+                  is a text selection). opacity only — never layout. */}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t`Remove selection`}
+                onClick={() => {
+                  setPinnedSelection(null);
+                  setSelectionExpanded(false);
+                }}
+                className="group/remove relative size-3.5 shrink-0 rounded-sm text-muted-foreground/80 hover:text-foreground"
               >
-                {/* The LEADING glyph IS the remove control (mirrors the file chip):
-                    a fixed-size cell holding the selection's TextQuote glyph and an
-                    X, cross-faded by opacity on chip hover / `:focus-within` / button
-                    focus. The cell never resizes, so the pill box is identical at
-                    rest vs hover → no reflow. TextQuote stays the at-rest icon (this
-                    is a text selection). opacity only — never layout. */}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label={t`Remove selection`}
-                  onClick={() => {
-                    setPinnedSelection(null);
-                    setSelectionExpanded(false);
-                  }}
-                  className="group/remove relative size-3.5 shrink-0 rounded-sm text-muted-foreground/80 hover:text-foreground"
-                >
-                  <TextQuote
-                    className="absolute top-1/2 left-1/2 size-3 -translate-x-1/2 -translate-y-1/2 opacity-100 transition-opacity duration-150 ease-out group-hover/chip:opacity-0 group-focus-within/chip:opacity-0 motion-reduce:transition-none"
-                    aria-hidden
-                  />
-                  <X
-                    className="absolute top-1/2 left-1/2 size-3 -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-150 ease-out group-hover/chip:opacity-100 group-focus-within/chip:opacity-100 motion-reduce:transition-none"
-                    aria-hidden
-                  />
-                </Button>
-                {/* The chip label is compact (`name (range)`); clicking it peeks
-                    the light-rendered preview (expand/collapse), Cursor-style. */}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  aria-expanded={selectionExpanded}
-                  aria-label={
-                    selectionExpanded ? t`Hide selection preview` : t`Show selection preview`
-                  }
-                  onClick={() => setSelectionExpanded((open) => !open)}
-                  data-testid="composer-selection-peek"
-                  className="h-auto min-h-0 min-w-0 justify-start truncate px-0 py-0 text-left font-normal text-muted-foreground text-xs hover:bg-transparent hover:text-foreground"
-                >
-                  {pinnedLabel}
-                </Button>
-              </span>
-              {selectionExpanded && pinnedPreview !== '' ? (
-                <p
-                  className="max-h-24 w-full basis-full overflow-y-auto whitespace-pre-wrap text-2xs text-muted-foreground/80 subtle-scrollbar"
-                  data-testid="composer-selection-preview"
-                >
-                  {pinnedPreview}
-                </p>
-              ) : null}
-            </>
-          ) : null}
-        </ComposerContextChips>
-        <div className="flex items-end gap-2">
-          <div className="relative flex-1">
-            <ComposerMentionInput
-              ref={inputRef}
-              ariaLabel={t`Ask AI`}
-              onEmptyChange={setIsEmpty}
-              onContentChange={setComposerDraftDoc}
-              onMentionsChange={setInlineMentions}
-              onSubmit={submit}
-              initialDoc={initialDraftDoc}
-              className="max-h-[200px] overflow-y-auto text-base md:text-sm"
-            />
-            {/* Animated placeholder overlay — decorative, so it's aria-hidden and
+                <TextQuote
+                  className="absolute top-1/2 left-1/2 size-3 -translate-x-1/2 -translate-y-1/2 opacity-100 transition-opacity duration-150 ease-out group-hover/chip:opacity-0 group-focus-within/chip:opacity-0 motion-reduce:transition-none"
+                  aria-hidden
+                />
+                <X
+                  className="absolute top-1/2 left-1/2 size-3 -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-150 ease-out group-hover/chip:opacity-100 group-focus-within/chip:opacity-100 motion-reduce:transition-none"
+                  aria-hidden
+                />
+              </Button>
+              {/* The chip label is compact (`name (range)`); clicking it peeks
+                  the light-rendered preview (expand/collapse), Cursor-style. */}
+              <Button
+                type="button"
+                variant="ghost"
+                aria-expanded={selectionExpanded}
+                aria-label={
+                  selectionExpanded ? t`Hide selection preview` : t`Show selection preview`
+                }
+                onClick={() => setSelectionExpanded((open) => !open)}
+                data-testid="composer-selection-peek"
+                className="h-auto min-h-0 min-w-0 justify-start truncate px-0 py-0 text-left font-normal text-muted-foreground text-xs hover:bg-transparent hover:text-foreground"
+              >
+                {pinnedLabel}
+              </Button>
+            </span>
+            {selectionExpanded && pinnedPreview !== '' ? (
+              <p
+                className="max-h-24 w-full basis-full overflow-y-auto whitespace-pre-wrap text-2xs text-muted-foreground/80 subtle-scrollbar"
+                data-testid="composer-selection-preview"
+              >
+                {pinnedPreview}
+              </p>
+            ) : null}
+          </>
+        ) : null}
+      </ComposerContextChips>
+      <div className="flex items-end gap-2">
+        <div className="relative flex-1">
+          <ComposerMentionInput
+            ref={inputRef}
+            ariaLabel={t`Ask AI`}
+            onEmptyChange={setIsEmpty}
+            onContentChange={setComposerDraftDoc}
+            onMentionsChange={setInlineMentions}
+            onSubmit={submit}
+            initialDoc={initialDraftDoc}
+            className="max-h-[200px] overflow-y-auto text-base md:text-sm"
+          />
+          {/* Animated placeholder overlay — decorative, so it's aria-hidden and
               the input keeps a stable accessible name. Aligns with the editor's
               text origin (py-1, text-base md:text-sm). */}
-            {isEmpty ? (
-              <div
-                aria-hidden
-                className={cn(
-                  'pointer-events-none absolute inset-0 truncate px-0 py-1 text-base text-muted-foreground/60 md:text-sm',
-                  !reduced && 'transition-opacity duration-500 ease-in-out',
-                  suggestion.visible ? 'opacity-100' : 'opacity-0',
-                )}
-              >
-                {suggestion.text}
-              </div>
-            ) : null}
-          </div>
-          <AgentSplitButton
-            primary={
-              <>
-                {selectedCli !== null ? (
-                  <SquareTerminal className="size-4" aria-hidden />
-                ) : resolvedTarget ? (
-                  <TargetIcon id={resolvedTarget.id} className="size-4" aria-hidden />
-                ) : null}
-                <span>
-                  {selectedCli !== null ? (
-                    <Trans>Ask {cliAriaLabels[selectedCli]}</Trans>
-                  ) : resolvedTarget ? (
-                    <Trans>Ask {resolvedTarget.displayName}</Trans>
-                  ) : (
-                    <Trans>Ask</Trans>
-                  )}
-                </span>
-                {pending ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : null}
-              </>
-            }
-            onPrimary={submit}
-            primaryDisabled={!canSend}
-            installedTargets={installedAgents}
-            selectedTargetId={isTerminalSelected ? null : (resolvedTarget?.id ?? null)}
-            onSelectTarget={handleSelectAgent}
-            terminals={cliRows}
-            menuEmptyState={
-              <p className="px-2 py-1.5 text-sm text-muted-foreground" aria-live="polite">
-                {agentProbePending ? (
-                  <Trans>Checking for installed agents</Trans>
-                ) : (
-                  <Trans>No installed agents found</Trans>
-                )}
-              </p>
-            }
-            triggerAriaLabel={t`Choose agent`}
-            testIds={{
-              primary: 'ask-ai-send',
-              trigger: 'ask-ai-agent-trigger',
-              menu: 'ask-ai-agent-menu',
-              option: (id) => `ask-ai-agent-option-${id}`,
-              terminal: (cli) =>
-                cli === 'claude'
-                  ? 'ask-ai-agent-option-terminal'
-                  : `ask-ai-agent-option-terminal-${cli}`,
-            }}
-          />
+          {isEmpty ? (
+            <div
+              aria-hidden
+              className={cn(
+                'pointer-events-none absolute inset-0 truncate px-0 py-1 text-base text-muted-foreground/60 md:text-sm',
+                !reduced && 'transition-opacity duration-500 ease-in-out',
+                suggestion.visible ? 'opacity-100' : 'opacity-0',
+              )}
+            >
+              {suggestion.text}
+            </div>
+          ) : null}
         </div>
+        <AgentSplitButton
+          primary={
+            <>
+              {selectedCli !== null ? (
+                <SquareTerminal className="size-4" aria-hidden />
+              ) : resolvedTarget ? (
+                <TargetIcon id={resolvedTarget.id} className="size-4" aria-hidden />
+              ) : null}
+              <span>
+                {selectedCli !== null ? (
+                  <Trans>Ask {cliAriaLabels[selectedCli]}</Trans>
+                ) : resolvedTarget ? (
+                  <Trans>Ask {resolvedTarget.displayName}</Trans>
+                ) : (
+                  <Trans>Ask</Trans>
+                )}
+              </span>
+              {pending ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : null}
+            </>
+          }
+          onPrimary={submit}
+          primaryDisabled={!canSend}
+          installedTargets={installedAgents}
+          selectedTargetId={isTerminalSelected ? null : (resolvedTarget?.id ?? null)}
+          onSelectTarget={handleSelectAgent}
+          terminals={cliRows}
+          menuEmptyState={
+            <p className="px-2 py-1.5 text-sm text-muted-foreground" aria-live="polite">
+              {agentProbePending ? (
+                <Trans>Checking for installed agents</Trans>
+              ) : (
+                <Trans>No installed agents found</Trans>
+              )}
+            </p>
+          }
+          triggerAriaLabel={t`Choose agent`}
+          testIds={{
+            primary: 'ask-ai-send',
+            trigger: 'ask-ai-agent-trigger',
+            menu: 'ask-ai-agent-menu',
+            option: (id) => `ask-ai-agent-option-${id}`,
+            terminal: (cli) =>
+              cli === 'claude'
+                ? 'ask-ai-agent-option-terminal'
+                : `ask-ai-agent-option-terminal-${cli}`,
+          }}
+        />
       </div>
+    </div>
+  );
+
+  if (folderMode) {
+    return (
+      <div className="shrink-0 pt-2 pb-3" data-testid="bottom-composer">
+        <div className="mx-auto w-full max-w-4xl px-6">{card}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-20 editor-content-aligned bg-gradient-to-t from-background from-65% via-background to-transparent pt-10 pb-2"
+      data-testid="bottom-composer"
+    >
+      {card}
     </div>
   );
 }

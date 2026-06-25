@@ -335,6 +335,7 @@ export function composeAskPrompt(
   return composeAskBody(safePath, fitted, autoOpen);
 }
 
+
 const OPEN_EDITOR_DIRECTIVE = 'Open the OK editor in web view.';
 
 export type ComposeSelection =
@@ -364,7 +365,23 @@ interface AssembleProjectScopeInput {
   readonly target: HandoffTarget;
 }
 
-export type AssembleHandoffPromptInput = AssembleDocScopeInput | AssembleProjectScopeInput;
+interface AssembleFolderScopeInput {
+  readonly scope: 'folder';
+  /** Folder's path relative to the OK content dir, forward-slash normalized with
+   *  no trailing slash (e.g. `specs/foo`). Sanitized before interpolation. */
+  readonly folderRelativePath: string;
+  readonly instruction: string;
+  /** Ordered explicit `@`-mention paths (workspace-relative). Each is sanitized
+   *  and kept; never trimmed by the budget guard. */
+  readonly mentions: readonly string[];
+  readonly autoOpen: boolean;
+  readonly target: HandoffTarget;
+}
+
+export type AssembleHandoffPromptInput =
+  | AssembleDocScopeInput
+  | AssembleProjectScopeInput
+  | AssembleFolderScopeInput;
 
 /** `> `-prefix every line so a multi-line instruction reads as one quoted
  *  directive rather than the first line quoting and the rest bleeding into the
@@ -410,11 +427,17 @@ function mentionsSegment(mentions: readonly string[]): string {
   return ['Also reference:', '', ...safe.map((p) => `@${p}`)].join('\n');
 }
 
-/** Scope lead — the doc `@`-mention for doc scope, the bare project directive
- *  for project scope. */
+/** Scope lead — the doc `@`-mention for doc scope, the folder `@`-mention for
+ *  folder scope, the bare project directive for project scope. The folder lead
+ *  mirrors `composeFolderPrompt`'s "the `<folder>` folder" framing but threads
+ *  it as an `@`-mention (consistent with the doc lead) so the agent CLIs resolve
+ *  it as a real reference. */
 function scopeLead(input: AssembleHandoffPromptInput): string {
   if (input.scope === 'doc') {
     return `Let's work on @${sanitizePathForAtMention(input.docRelativePath)} using Open Knowledge.`;
+  }
+  if (input.scope === 'folder') {
+    return `Let's work on the @${sanitizePathForAtMention(input.folderRelativePath)} folder using Open Knowledge.`;
   }
   return `Let's work on this project using Open Knowledge.`;
 }

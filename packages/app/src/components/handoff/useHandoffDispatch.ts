@@ -1,3 +1,4 @@
+
 import {
   type AssembleHandoffPromptInput,
   assembleHandoffPrompt,
@@ -58,6 +59,14 @@ type ComposeContext =
       /** The active doc's selected passage transport (inline / lines / anchor).
        *  Omitted when there is no selection at submit. */
       readonly selection?: ComposeSelection;
+      readonly instruction: string;
+      readonly mentions: readonly string[];
+    }
+  | {
+      readonly scope: 'folder';
+      /** Active folder's path relative to the OK content dir, forward-slash
+       *  normalized with no trailing slash. Sanitized inside the assembler. */
+      readonly folderRelativePath: string;
       readonly instruction: string;
       readonly mentions: readonly string[];
     }
@@ -225,6 +234,9 @@ export function buildAskHandoffInput(args: {
 
 export function buildComposerHandoffInput(args: {
   readonly docName: string | null;
+  /** Workspace-relative folder path, forward-slash normalized, no trailing
+   *  slash. When set and `docName` is null, selects folder scope. */
+  readonly folderRelativePath?: string;
   readonly workspace: Workspace | null;
   readonly instruction: string;
   readonly mentions: readonly string[];
@@ -247,6 +259,19 @@ export function buildComposerHandoffInput(args: {
       compose,
       projectDir: contentDir,
       docPath: joinWorkspacePath(contentDir, relativePath, pathSeparator),
+    };
+  }
+  if (args.folderRelativePath) {
+    return {
+      docContext: null,
+      compose: {
+        scope: 'folder',
+        folderRelativePath: args.folderRelativePath,
+        instruction: args.instruction,
+        mentions: args.mentions,
+      },
+      projectDir: contentDir,
+      docPath: '',
     };
   }
   return {
@@ -341,6 +366,16 @@ function composeContextToAssembleInput(
       autoOpen,
     };
     return compose.selection !== undefined ? { ...base, selection: compose.selection } : base;
+  }
+  if (compose.scope === 'folder') {
+    return {
+      scope: 'folder',
+      folderRelativePath: compose.folderRelativePath,
+      instruction: compose.instruction,
+      mentions: compose.mentions,
+      target,
+      autoOpen,
+    };
   }
   return {
     scope: 'project',

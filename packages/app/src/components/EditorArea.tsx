@@ -43,7 +43,7 @@ import { useSettingsRoute } from '@/lib/use-settings-route';
 import { cn } from '@/lib/utils';
 import { useSyncStatus } from '@/presence/use-sync-status';
 import { BottomComposer } from './BottomComposer';
-import { shouldShowBottomComposer } from './bottom-composer-gate';
+import { shouldShowBottomComposer, shouldShowFolderComposer } from './bottom-composer-gate';
 import { EditorActivityPool } from './EditorActivityPool';
 import { EditorFooter } from './EditorFooter';
 import type { EditorMode, TerminalLaunchIntent } from './EditorPane';
@@ -329,7 +329,17 @@ function EditorAreaInner({
       />
     );
   } else if (activeTarget?.kind === 'folder') {
-    viewContent = <FolderOverview folderPath={activeTarget.folderPath} />;
+    const showFolderComposer = shouldShowFolderComposer({
+      terminalVisible,
+      isEmbedded,
+      isDesktop,
+    });
+    viewContent = (
+      <div className="relative flex h-full min-h-0 flex-col">
+        <FolderOverview folderPath={activeTarget.folderPath} />
+        {showFolderComposer ? <BottomComposer folderPath={activeTarget.folderPath} /> : null}
+      </div>
+    );
     const showAgentPanel = docPanelMode === 'agent' && docPanelAgentId !== null;
     if (showAgentPanel) {
       rightPanel = (

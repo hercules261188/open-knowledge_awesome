@@ -123,6 +123,7 @@ mock.module('@/hooks/use-selection-context', () => ({
 const dispatchCalls: Array<{ target: string; input: unknown }> = [];
 const buildArgs: Array<{
   docName: string | null;
+  folderRelativePath?: string;
   workspace: unknown;
   instruction: string;
   mentions: readonly string[];
@@ -142,6 +143,7 @@ mock.module('@/components/handoff/useHandoffDispatch', () => ({
   }),
   buildComposerHandoffInput: (args: {
     docName: string | null;
+    folderRelativePath?: string;
     workspace: unknown;
     instruction: string;
     mentions: readonly string[];
@@ -202,6 +204,11 @@ async function renderComposerWithTerminal(docName = 'notes') {
   );
 }
 
+async function renderFolderComposer(folderPath = 'specs/foo') {
+  const { BottomComposer } = await import('./BottomComposer');
+  return render(<BottomComposer folderPath={folderPath} />);
+}
+
 function getInput() {
   return screen.getByRole('textbox', { name: 'Ask AI' }) as HTMLTextAreaElement;
 }
@@ -258,7 +265,8 @@ beforeEach(() => {
   toastErrors.length = 0;
   try {
     window.localStorage.clear();
-  } catch {}
+  } catch {
+  }
 });
 
 afterEach(() => {
@@ -641,6 +649,42 @@ describe('BottomComposer (selection pill)', () => {
     await renderComposer();
     fireEvent.click(screen.getByTestId('ask-ai-send'));
     await waitFor(() => expect(screen.queryByTestId('composer-selection-pill')).toBeNull());
+  });
+});
+
+describe('BottomComposer (folder mode)', () => {
+  test('shows the folder as a top-row context chip from the first render (basename label)', async () => {
+    await renderFolderComposer('specs/foo');
+    const chip = await screen.findByTestId('composer-context-chip-file-specs/foo');
+    expect(chip.textContent).toContain('foo');
+    expect(screen.getByRole('button', { name: /Remove foo from context/i })).toBeTruthy();
+  });
+
+  test('does not render the collapse handle (folder view has no footer to reopen from)', async () => {
+    await renderFolderComposer('specs/foo');
+    expect(screen.queryByTestId('ask-ai-collapse')).toBeNull();
+  });
+
+  test('Send dispatches folder scope: null docName + folderRelativePath, folder not in mentions', async () => {
+    await renderFolderComposer('specs/foo');
+    fireEvent.change(getInput(), { target: { value: 'audit this folder' } });
+    fireEvent.click(screen.getByTestId('ask-ai-send'));
+
+    await waitFor(() => expect(dispatchCalls).toHaveLength(1));
+    expect(buildArgs[0]).toMatchObject({
+      docName: null,
+      folderRelativePath: 'specs/foo',
+      instruction: 'audit this folder',
+    });
+    expect(buildArgs[0]?.mentions).not.toContain('specs/foo');
+    expect(dispatchCalls[0]?.target).toBe('claude-code');
+  });
+
+  test('X-ing the folder chip sticky-drops it (to project scope) for the draft', async () => {
+    await renderFolderComposer('specs/foo');
+    await screen.findByTestId('composer-context-chip-file-specs/foo');
+    fireEvent.click(screen.getByRole('button', { name: /Remove foo from context/i }));
+    expect(screen.queryByTestId('composer-context-chip-file-specs/foo')).toBeNull();
   });
 });
 

@@ -1,3 +1,4 @@
+
 import { describe, expect, mock, test } from 'bun:test';
 import { setTimeout as wait } from 'node:timers/promises';
 import type { HandoffOutcome, HandoffPayload, HandoffTarget } from '@inkeep/open-knowledge-core';
@@ -1899,6 +1900,38 @@ describe('buildComposerHandoffInput — compose-scoped helper (US-002)', () => {
     expect(input?.docPath).toBe('/repo/specs/foo/SPEC.md');
   });
 
+  test('folderRelativePath with null docName builds a folder-scope compose input (folder lead, empty docPath)', async () => {
+    const { buildComposerHandoffInput } = await import('./useHandoffDispatch');
+    const input = buildComposerHandoffInput({
+      docName: null,
+      folderRelativePath: 'specs/foo',
+      workspace: { contentDir: '/repo', pathSeparator: '/' },
+      instruction: 'audit this folder',
+      mentions: ['AGENTS.md'],
+    });
+    expect(input?.compose).toEqual({
+      scope: 'folder',
+      folderRelativePath: 'specs/foo',
+      instruction: 'audit this folder',
+      mentions: ['AGENTS.md'],
+    });
+    expect(input?.docContext).toBeNull();
+    expect(input?.projectDir).toBe('/repo');
+    expect(input?.docPath).toBe('');
+  });
+
+  test('docName takes precedence over folderRelativePath (doc scope wins)', async () => {
+    const { buildComposerHandoffInput } = await import('./useHandoffDispatch');
+    const input = buildComposerHandoffInput({
+      docName: 'notes/today',
+      folderRelativePath: 'specs/foo',
+      workspace: { contentDir: '/repo', pathSeparator: '/' },
+      instruction: 'tidy',
+      mentions: [],
+    });
+    expect(input?.compose?.scope).toBe('doc');
+  });
+
   test('doc scope carries a provided selection; an omitted selection is absent', async () => {
     const { buildComposerHandoffInput } = await import('./useHandoffDispatch');
     const withSel = buildComposerHandoffInput({
@@ -1956,6 +1989,36 @@ describe('selectScopedPrompt — compose scope (US-002)', () => {
     expect(out).toContain('@guides/style.md');
     expect(out).toContain('@AGENTS.md');
     expect(out).toContain('> tighten the intro');
+  });
+
+  test('folder scope routes through assembleHandoffPrompt with the folder @-mention lead + mentions', async () => {
+    const { selectScopedPrompt } = await import('./useHandoffDispatch');
+    const { assembleHandoffPrompt } = await import('@inkeep/open-knowledge-core');
+    const input: HandoffDispatchInput = {
+      docContext: null,
+      compose: {
+        scope: 'folder',
+        folderRelativePath: 'specs/foo',
+        instruction: 'audit this folder',
+        mentions: ['AGENTS.md'],
+      },
+      projectDir: '/repo',
+      docPath: '',
+    };
+    const out = selectScopedPrompt(input, 'cursor', true);
+    expect(out).toBe(
+      assembleHandoffPrompt({
+        scope: 'folder',
+        folderRelativePath: 'specs/foo',
+        instruction: 'audit this folder',
+        mentions: ['AGENTS.md'],
+        autoOpen: true,
+        target: 'cursor',
+      }),
+    );
+    expect(out).toContain('@specs/foo folder');
+    expect(out).toContain('@AGENTS.md');
+    expect(out).toContain('> audit this folder');
   });
 
   test('project scope routes through assembleHandoffPrompt with no doc @-mention', async () => {

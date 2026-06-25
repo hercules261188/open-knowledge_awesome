@@ -13,3 +13,9 @@ export function shouldShowBottomComposer(inputs: BottomComposerGateInputs): bool
     inputs.activeDocName !== null
   );
 }
+
+export function shouldShowFolderComposer(
+  inputs: Omit<BottomComposerGateInputs, 'activeDocName'>,
+): boolean {
+  return !inputs.terminalVisible && !inputs.isEmbedded && inputs.isDesktop;
+}
