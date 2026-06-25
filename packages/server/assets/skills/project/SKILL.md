@@ -489,6 +489,7 @@ Typical day-2 flow: user shares a URL → `ingest` (preserve) → user asks "now
 
 - `knowledge-base` — source-grounded research articles
 - `software-lifecycle` — proposals, decisions, specs
+- `codebase-wiki` — agent-authored wiki of your codebase
 - `plain-notes` — notes + daily journal
 - `worldbuilding` — fiction story wiki
 - `writing-pipeline` — drafts → published

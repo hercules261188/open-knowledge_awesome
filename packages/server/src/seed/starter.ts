@@ -1,6 +1,7 @@
 export type PackId =
   | 'knowledge-base'
   | 'software-lifecycle'
+  | 'codebase-wiki'
   | 'plain-notes'
   | 'worldbuilding'
   | 'writing-pipeline'
@@ -373,6 +374,183 @@ tags: [postmortem]
 ## Action items
 `,
 };
+
+const CODEBASE_WIKI_FOLDERS: readonly StarterFolder[] = [
+  {
+    path: 'wiki/architecture',
+    title: 'Architecture',
+    description:
+      'System boundaries, layers, subsystems, and cross-cutting concerns — the big-picture structure. One page per architectural area, each with a `mermaid` system-context or component diagram, the key components, and the design decisions behind them. Uses the `architecture-page` template. Cross-link the modules and flows each area touches. Reference source files per the wiki source-reference convention (relative links + symbol code-spans for `internal`; GitHub blob URLs for `public`).',
+    tags: ['wiki', 'architecture'],
+    starterTemplate: 'architecture-page',
+  },
+  {
+    path: 'wiki/modules',
+    title: 'Modules',
+    description:
+      'One page per package or module: purpose, responsibilities, public API / entry points, key files (linked per the source-reference convention), dependencies, and the flows it participates in. Uses the `module-page` template. At `depth: tour` these fold into the architecture pages; at `standard`+ each package gets its own page. Cross-link concepts and flows.',
+    tags: ['wiki', 'module'],
+    starterTemplate: 'module-page',
+  },
+  {
+    path: 'wiki/flows',
+    title: 'Flows',
+    description:
+      'Key end-to-end flows as `mermaid` sequence or flow diagrams plus narrative — how a request, job, or interaction moves through the system. Uses the `flow-page` template; record failure modes at `depth: exhaustive`. Link every module and concept the flow crosses.',
+    tags: ['wiki', 'flow'],
+    starterTemplate: 'flow-page',
+  },
+  {
+    path: 'wiki/concepts',
+    title: 'Concepts',
+    description:
+      'Glossary of atomic pages for domain terms and core abstractions — the vocabulary a newcomer needs. Uses the `concept-page` template: definition, why it matters, where it lives in the code. Keep pages small and densely cross-linked so concepts become hubs for everywhere they appear.',
+    tags: ['wiki', 'concept'],
+    starterTemplate: 'concept-page',
+  },
+  {
+    path: 'wiki/guides',
+    title: 'Guides',
+    description:
+      'Task-oriented "how / where do I change X" walkthroughs. Uses the `guide-page` template: goal, steps, relevant code, gotchas. Populated at `depth: standard` and rich at `exhaustive`; thin or empty at `tour`. Link the modules and flows each guide touches.',
+    tags: ['wiki', 'guide', 'how-to'],
+    starterTemplate: 'guide-page',
+  },
+] as const;
+
+const CODEBASE_WIKI_TEMPLATES: Readonly<Record<string, string>> = {
+  'architecture-page': `---
+template:
+  title: Architecture Page
+  description: One subsystem, layer, or cross-cutting concern — boundaries, a diagram, and the key components.
+type: architecture
+tags: [wiki, architecture]
+---
+
+## Summary
+
+## Diagram
+
+## Key components
+
+## Design decisions
+
+## Related
+`,
+  'module-page': `---
+template:
+  title: Module Page
+  description: One package or module — its purpose, public surface, key files, and dependencies.
+type: module
+tags: [wiki, module]
+---
+
+## Summary
+
+## Responsibilities
+
+## Public API / entry points
+
+## Key files
+
+## Dependencies
+
+## Participates in
+
+## Related
+`,
+  'flow-page': `---
+template:
+  title: Flow Page
+  description: One end-to-end flow as a sequence diagram, with narrative and failure modes.
+type: flow
+tags: [wiki, flow]
+---
+
+## Summary
+
+## Trigger
+
+## Sequence diagram
+
+## Steps
+
+## Failure modes
+
+## Related
+`,
+  'concept-page': `---
+template:
+  title: Concept Page
+  description: One domain term or core abstraction — what it means, why it matters, and where it lives in the code.
+type: concept
+tags: [wiki, concept]
+---
+
+## Definition
+
+## Why it matters
+
+## Where it lives
+
+## Related
+`,
+  'guide-page': `---
+template:
+  title: Guide Page
+  description: A task-oriented how / where-do-I-change-X walkthrough — goal, steps, relevant code, and gotchas.
+type: guide
+tags: [wiki, guide]
+---
+
+## Goal
+
+## Steps
+
+## Relevant code
+
+## Gotchas
+
+## Related
+`,
+};
+
+const CODEBASE_WIKI_OVERVIEW_MD = `---
+title: Codebase Wiki — Overview
+description: Home page and navigation hub for this codebase wiki. Generated and refreshed by the wiki workflow.
+profile:
+source_commit:
+tags: [wiki, overview]
+---
+
+# Overview
+
+The home page and navigation hub for this codebase's wiki. It is a stub until you run the wiki workflow — ask your agent to "build the wiki" (optionally naming an audience and depth, e.g. "public, exhaustive"), or call \`workflow({ kind: "wiki" })\` directly.
+
+Once generated, this page carries: what the project is, a big-picture architecture diagram, and a navigation map linking every section below.
+
+## What this is
+
+## Architecture at a glance
+
+## Navigation
+
+- Architecture — system boundaries, layers, subsystems
+- Modules — one page per package / module
+- Flows — key end-to-end sequences
+- Concepts — glossary of domain terms and core abstractions
+- Guides — task-oriented how / where-do-I-change-X walkthroughs
+`;
+
+const CODEBASE_WIKI_LOG_MD = `---
+title: Wiki Log
+description: Append-only audit trail of wiki generation and refresh runs.
+---
+
+# Wiki Log
+
+Append-only audit trail. Add one dated entry per generation or refresh run, recording the profile, the \`source_commit\` it was anchored to, and the coverage. The codebase-wiki skill describes the entry shape.
+`;
 
 const PLAIN_NOTES_FOLDERS: readonly StarterFolder[] = [
   {
@@ -1208,6 +1386,19 @@ export const STARTER_PACKS: Readonly<Record<PackId, StarterPack>> = {
     defaultSubfolder: 'project-docs',
     folders: SOFTWARE_LIFECYCLE_FOLDERS,
     templates: SOFTWARE_LIFECYCLE_TEMPLATES,
+  },
+  'codebase-wiki': {
+    id: 'codebase-wiki',
+    name: 'Codebase wiki',
+    description:
+      'An agent-authored, navigable wiki of your codebase — architecture, modules, flows, concepts, and guides, with diagrams, cross-links, and source references. Generated and refreshed by the `wiki` workflow; version-controlled and private by default.',
+    defaultSubfolder: undefined,
+    folders: CODEBASE_WIKI_FOLDERS,
+    templates: CODEBASE_WIKI_TEMPLATES,
+    rootFiles: {
+      'wiki/OVERVIEW.md': CODEBASE_WIKI_OVERVIEW_MD,
+      'wiki/log.md': CODEBASE_WIKI_LOG_MD,
+    },
   },
   'plain-notes': {
     id: 'plain-notes',

@@ -2,6 +2,7 @@
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
   ArrowRight,
+  BookMarked,
   Compass,
   FileCheck,
   GitBranch,
@@ -19,6 +20,7 @@ import { cn } from '@/lib/utils';
 const PACK_ICONS: Record<OkPackId, React.ComponentType<{ className?: string }>> = {
   'knowledge-base': Library,
   'software-lifecycle': GitBranch,
+  'codebase-wiki': BookMarked,
   'plain-notes': StickyNote,
   worldbuilding: Compass,
   'writing-pipeline': PenLine,

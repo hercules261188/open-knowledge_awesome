@@ -267,6 +267,7 @@ interface OkSeedError {
 type OkPackId =
   | 'knowledge-base'
   | 'software-lifecycle'
+  | 'codebase-wiki'
   | 'plain-notes'
   | 'worldbuilding'
   | 'writing-pipeline'

@@ -15,6 +15,7 @@ const STARTER_TEMPLATES = KNOWLEDGE_BASE_PACK.templates;
 const LOG_MD_TEMPLATE = KNOWLEDGE_BASE_PACK.rootFiles?.['log.md'];
 if (!LOG_MD_TEMPLATE) throw new Error('knowledge-base pack is missing log.md');
 const ENTITY_VAULT_PACK = STARTER_PACKS['entity-vault'];
+const CODEBASE_WIKI_PACK = STARTER_PACKS['codebase-wiki'];
 
 function stripTemplateMetadata(body: string): string {
   return parseTemplateFile(body).starterContent;
@@ -136,9 +137,10 @@ describe('STARTER_FOLDER_FRONTMATTER_FILENAME', () => {
 });
 
 describe('STARTER_PACKS — all packs structural validation', () => {
-  test('STARTER_PACK_IDS contains exactly the 7 expected packs (pinned to detect silent additions/deletions)', () => {
-    expect(STARTER_PACK_IDS.length).toBe(7);
+  test('STARTER_PACK_IDS contains exactly the 8 expected packs (pinned to detect silent additions/deletions)', () => {
+    expect(STARTER_PACK_IDS.length).toBe(8);
     expect([...STARTER_PACK_IDS].sort()).toEqual([
+      'codebase-wiki',
       'entity-vault',
       'knowledge-base',
       'okf',
@@ -192,10 +194,15 @@ describe('STARTER_PACKS — all packs structural validation', () => {
     }
   });
 
-  test('every folder path uses kebab-case (matches existing scaffolder validator)', () => {
+  test('every folder path uses kebab-case per segment (nested paths allowed, e.g. wiki/architecture)', () => {
     for (const pack of Object.values(STARTER_PACKS)) {
       for (const folder of pack.folders) {
-        expect(folder.path).toMatch(/^[a-z][a-z0-9-]*$/);
+        for (const segment of folder.path.split('/')) {
+          expect(
+            segment,
+            `folder "${folder.path}" in pack "${pack.id}" has a non-kebab segment "${segment}"`,
+          ).toMatch(/^[a-z][a-z0-9-]*$/);
+        }
       }
     }
   });
@@ -286,23 +293,28 @@ describe('STARTER_PACKS — all packs structural validation', () => {
     }
   });
 
-  test('every rootFile filename is safe (no path separators, no leading dot, non-empty)', () => {
+  test('every rootFile key is a safe relative path (forward-slash nesting allowed, no escape)', () => {
     for (const pack of Object.values(STARTER_PACKS)) {
       for (const filename of Object.keys(pack.rootFiles ?? {})) {
-        expect(filename.length, `Pack "${pack.id}" has an empty rootFile filename`).toBeGreaterThan(
-          0,
-        );
-        expect(
-          filename,
-          `Pack "${pack.id}" rootFile "${filename}" contains path separator`,
-        ).not.toContain('/');
+        expect(filename.length, `Pack "${pack.id}" has an empty rootFile key`).toBeGreaterThan(0);
         expect(
           filename,
           `Pack "${pack.id}" rootFile "${filename}" contains backslash`,
         ).not.toContain('\\');
-        expect(filename, `Pack "${pack.id}" rootFile "${filename}" is a dotfile`).not.toMatch(
-          /^\./,
-        );
+        expect(filename, `Pack "${pack.id}" rootFile "${filename}" is absolute`).not.toMatch(/^\//);
+        for (const segment of filename.split('/')) {
+          expect(
+            segment.length,
+            `Pack "${pack.id}" rootFile "${filename}" has an empty path segment`,
+          ).toBeGreaterThan(0);
+          expect(segment, `Pack "${pack.id}" rootFile "${filename}" has a '..' segment`).not.toBe(
+            '..',
+          );
+          expect(
+            segment,
+            `Pack "${pack.id}" rootFile "${filename}" has a dotfile segment "${segment}"`,
+          ).not.toMatch(/^\./);
+        }
       }
     }
   });
@@ -358,6 +370,59 @@ describe('Entity vault pack — GBrain-compatible Markdown shape', () => {
     expect(ENTITY_VAULT_PACK.templates.meeting).toContain(
       '[[concepts/agent-runtime-observability|agent-runtime observability]]',
     );
+  });
+});
+
+describe('Codebase wiki pack — nested wiki/ layout', () => {
+  test('scaffolds the five sections nested under wiki/, in reading order', () => {
+    expect(CODEBASE_WIKI_PACK.id).toBe('codebase-wiki');
+    expect(CODEBASE_WIKI_PACK.folders.map((f) => f.path)).toEqual([
+      'wiki/architecture',
+      'wiki/modules',
+      'wiki/flows',
+      'wiki/concepts',
+      'wiki/guides',
+    ]);
+  });
+
+  test('every folder path nests under wiki/ so it scaffolds without --root', () => {
+    for (const folder of CODEBASE_WIKI_PACK.folders) {
+      expect(
+        folder.path.startsWith('wiki/'),
+        `folder "${folder.path}" should nest under wiki/`,
+      ).toBe(true);
+    }
+  });
+
+  test('no defaultSubfolder — the nested paths already place everything under wiki/', () => {
+    expect(CODEBASE_WIKI_PACK.defaultSubfolder).toBeUndefined();
+  });
+
+  test('each section ships its named page template, resolvable in pack.templates', () => {
+    const expected: Record<string, string> = {
+      'wiki/architecture': 'architecture-page',
+      'wiki/modules': 'module-page',
+      'wiki/flows': 'flow-page',
+      'wiki/concepts': 'concept-page',
+      'wiki/guides': 'guide-page',
+    };
+    for (const folder of CODEBASE_WIKI_PACK.folders) {
+      expect(folder.starterTemplate).toBe(expected[folder.path]);
+      expect(CODEBASE_WIKI_PACK.templates[folder.starterTemplate]).toBeDefined();
+    }
+  });
+
+  test('ships OVERVIEW + log root files, both prefixed under wiki/', () => {
+    expect(Object.keys(CODEBASE_WIKI_PACK.rootFiles ?? {}).sort()).toEqual([
+      'wiki/OVERVIEW.md',
+      'wiki/log.md',
+    ]);
+  });
+
+  test('OVERVIEW stub carries the profile + source_commit freshness anchors', () => {
+    const overview = CODEBASE_WIKI_PACK.rootFiles?.['wiki/OVERVIEW.md'] ?? '';
+    expect(overview).toContain('profile:');
+    expect(overview).toContain('source_commit:');
   });
 });
 

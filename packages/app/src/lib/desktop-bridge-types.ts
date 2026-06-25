@@ -51,6 +51,7 @@ export interface OkSeedError {
 export type OkPackId =
   | 'knowledge-base'
   | 'software-lifecycle'
+  | 'codebase-wiki'
   | 'plain-notes'
   | 'worldbuilding'
   | 'writing-pipeline'
