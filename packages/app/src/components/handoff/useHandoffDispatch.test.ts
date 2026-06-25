@@ -1,7 +1,12 @@
+
 import { describe, expect, mock, test } from 'bun:test';
 import { setTimeout as wait } from 'node:timers/promises';
 import type { HandoffOutcome, HandoffPayload, HandoffTarget } from '@inkeep/open-knowledge-core';
-import { withSkillPointer } from '@inkeep/open-knowledge-core';
+import {
+  composeTerminalBareLaunchPrompt,
+  OK_TERMINAL_SURFACE_PREAMBLE,
+  withSkillPointer,
+} from '@inkeep/open-knowledge-core';
 import type {
   HandoffDispatchDeps,
   HandoffDispatchInput,
@@ -1396,8 +1401,8 @@ describe('runHandoffDispatch — selection scope', () => {
   });
 });
 
-describe('composeTerminalLaunchPrompt — docked-terminal launcher always suppresses the trailer', () => {
-  test('file scope omits the "Open the OK editor in web view." trailer', async () => {
+describe('composeTerminalLaunchPrompt — docked-terminal bare launch is load + read + stop', () => {
+  test('file scope reads the open file via OK MCP, then stops', async () => {
     const { composeTerminalLaunchPrompt } = await import('./useHandoffDispatch');
     const out = composeTerminalLaunchPrompt(
       {
@@ -1407,11 +1412,14 @@ describe('composeTerminalLaunchPrompt — docked-terminal launcher always suppre
       },
       'claude',
     );
-    expect(out).toBe(withSkillPointer("Let's work on `notes/today.md` using Open Knowledge."));
+    expect(out).toBe(composeTerminalBareLaunchPrompt('notes/today.md'));
+    expect(out).toContain(OK_TERMINAL_SURFACE_PREAMBLE);
+    expect(out).toContain('Read `notes/today.md` via the Open Knowledge MCP server, then stop.');
+    expect(out).not.toContain("Let's work on");
     expect(out).not.toContain('Open the OK editor');
   });
 
-  test('folder scope omits the trailer', async () => {
+  test('folder scope has no file to read — just load and stop', async () => {
     const { composeTerminalLaunchPrompt } = await import('./useHandoffDispatch');
     const out = composeTerminalLaunchPrompt(
       {
@@ -1422,13 +1430,14 @@ describe('composeTerminalLaunchPrompt — docked-terminal launcher always suppre
       },
       'claude',
     );
-    expect(out).toBe(
-      withSkillPointer("Let's work on the `specs/foo` folder using Open Knowledge."),
-    );
-    expect(out).not.toContain('Open the OK editor');
+    expect(out).toBe(composeTerminalBareLaunchPrompt(null));
+    expect(out).toContain(OK_TERMINAL_SURFACE_PREAMBLE);
+    expect(out.endsWith('Then stop.')).toBe(true);
+    expect(out).not.toContain('Read `');
+    expect(out).not.toContain("Let's work on");
   });
 
-  test('project / empty-space scope omits the trailer', async () => {
+  test('project / empty-space scope — just load and stop', async () => {
     const { composeTerminalLaunchPrompt } = await import('./useHandoffDispatch');
     const out = composeTerminalLaunchPrompt(
       {
@@ -1438,11 +1447,12 @@ describe('composeTerminalLaunchPrompt — docked-terminal launcher always suppre
       },
       'claude',
     );
-    expect(out).toBe(withSkillPointer("Let's work on this project using Open Knowledge."));
-    expect(out).not.toContain('Open the OK editor');
+    expect(out).toBe(composeTerminalBareLaunchPrompt(null));
+    expect(out.endsWith('Then stop.')).toBe(true);
+    expect(out).not.toContain("Let's work on");
   });
 
-  test('codex / cursor compose the same directive prompt as claude (target only varies for selection scope)', async () => {
+  test('bare launch is CLI-agnostic — codex / cursor compose the same prompt as claude', async () => {
     const { composeTerminalLaunchPrompt } = await import('./useHandoffDispatch');
     const input = {
       docContext: { relativePath: 'notes/today.md' },
@@ -1450,11 +1460,87 @@ describe('composeTerminalLaunchPrompt — docked-terminal launcher always suppre
       docPath: '/proj/notes/today.md',
     };
     const claudeOut = composeTerminalLaunchPrompt(input, 'claude');
+    expect(claudeOut).toBe(composeTerminalBareLaunchPrompt('notes/today.md'));
     expect(composeTerminalLaunchPrompt(input, 'codex')).toBe(claudeOut);
     expect(composeTerminalLaunchPrompt(input, 'cursor')).toBe(claudeOut);
   });
 
-  test('terminal launch drops the trailer while the web deep-link handoff retains it for the same input', async () => {
+  test('typed instruction is preserved per CLI (keeps the directive composer, no "stop")', async () => {
+    const { composeTerminalLaunchPrompt, selectScopedPrompt } = await import(
+      './useHandoffDispatch'
+    );
+    const input = {
+      docContext: { relativePath: 'notes/today.md' },
+      projectDir: '/proj',
+      docPath: '/proj/notes/today.md',
+      instruction: 'summarize the open questions',
+    };
+    expect(composeTerminalLaunchPrompt(input, 'claude')).toBe(
+      selectScopedPrompt(input, 'claude-code', false),
+    );
+    expect(composeTerminalLaunchPrompt(input, 'codex')).toBe(
+      selectScopedPrompt(input, 'codex', false),
+    );
+    expect(composeTerminalLaunchPrompt(input, 'cursor')).toBe(
+      selectScopedPrompt(input, 'cursor', false),
+    );
+    const claudeOut = composeTerminalLaunchPrompt(input, 'claude');
+    expect(claudeOut).toContain('summarize the open questions');
+    expect(claudeOut).not.toContain(OK_TERMINAL_SURFACE_PREAMBLE);
+  });
+
+  test('whitespace-only instruction is treated as a bare launch', async () => {
+    const { composeTerminalLaunchPrompt } = await import('./useHandoffDispatch');
+    const out = composeTerminalLaunchPrompt(
+      {
+        docContext: { relativePath: 'notes/today.md' },
+        projectDir: '/proj',
+        docPath: '/proj/notes/today.md',
+        instruction: '   ',
+      },
+      'claude',
+    );
+    expect(out).toBe(composeTerminalBareLaunchPrompt('notes/today.md'));
+    expect(out).toContain(OK_TERMINAL_SURFACE_PREAMBLE);
+    expect(out).not.toContain('Instruction:');
+    expect(out).not.toContain("Let's work on");
+  });
+
+  test('create brief is preserved (keeps the directive composer)', async () => {
+    const { composeTerminalLaunchPrompt, selectScopedPrompt } = await import(
+      './useHandoffDispatch'
+    );
+    const input = {
+      docContext: null,
+      createDescription: 'a fishing log',
+      createScenario: 'new-project' as const,
+      projectDir: '/proj',
+      docPath: '',
+    };
+    const out = composeTerminalLaunchPrompt(input, 'claude');
+    expect(out).toBe(selectScopedPrompt(input, 'claude-code', false));
+    expect(out).toContain('a fishing log');
+    expect(out).not.toContain(OK_TERMINAL_SURFACE_PREAMBLE);
+  });
+
+  test('empty create brief still routes to the directive composer (createDescription !== undefined)', async () => {
+    const { composeTerminalLaunchPrompt, selectScopedPrompt } = await import(
+      './useHandoffDispatch'
+    );
+    const input = {
+      docContext: null,
+      createDescription: '',
+      createScenario: 'new-project' as const,
+      projectDir: '/proj',
+      docPath: '',
+    };
+    const out = composeTerminalLaunchPrompt(input, 'claude');
+    expect(out).toBe(selectScopedPrompt(input, 'claude-code', false));
+    expect(out).not.toBe(composeTerminalBareLaunchPrompt(null));
+    expect(out).not.toContain(OK_TERMINAL_SURFACE_PREAMBLE);
+  });
+
+  test('bare terminal launch never carries the web-view preview trailer', async () => {
     const { composeTerminalLaunchPrompt, selectScopedPrompt } = await import(
       './useHandoffDispatch'
     );
@@ -1463,11 +1549,10 @@ describe('composeTerminalLaunchPrompt — docked-terminal launcher always suppre
       projectDir: '/proj',
       docPath: '/proj/notes/today.md',
     };
-    const terminalPrompt = composeTerminalLaunchPrompt(input, 'claude');
-    const webHandoffPrompt = selectScopedPrompt(input, 'claude-code', true);
-
-    expect(terminalPrompt).not.toContain('Open the OK editor');
-    expect(webHandoffPrompt).toContain('Open the OK editor in web view.');
+    expect(composeTerminalLaunchPrompt(input, 'claude')).not.toContain('Open the OK editor');
+    expect(selectScopedPrompt(input, 'claude-code', true)).toContain(
+      'Open the OK editor in web view.',
+    );
   });
 });
 

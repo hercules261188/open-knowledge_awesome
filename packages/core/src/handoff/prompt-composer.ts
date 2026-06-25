@@ -41,6 +41,17 @@ export function withSkillPointer(directive: string): string {
   return `${OK_PROJECT_SKILL_POINTER} ${directive}`;
 }
 
+export const OK_TERMINAL_SURFACE_PREAMBLE =
+  "You're running in the terminal of the Open Knowledge desktop app.";
+
+export function composeTerminalBareLaunchPrompt(relativePath: string | null): string {
+  const tail =
+    relativePath === null
+      ? 'Then stop.'
+      : `Read \`${sanitizePathForPrompt(relativePath)}\` via the Open Knowledge MCP server, then stop.`;
+  return `${OK_TERMINAL_SURFACE_PREAMBLE} ${OK_PROJECT_SKILL_POINTER} ${tail}`;
+}
+
 export function composeFilePrompt(
   relativePath: string,
   autoOpen: boolean,
@@ -323,6 +334,7 @@ export function composeAskPrompt(
   );
   return composeAskBody(safePath, fitted, autoOpen);
 }
+
 
 const OPEN_EDITOR_DIRECTIVE = 'Open the OK editor in web view.';
 

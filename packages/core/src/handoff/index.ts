@@ -1,3 +1,4 @@
+
 export { buildClaudeUrl } from './claude-url.ts';
 export { buildCodexUrl } from './codex-url.ts';
 export { buildCursorUrl } from './cursor-url.ts';
@@ -13,7 +14,9 @@ export {
   composeFilePrompt,
   composeFolderPrompt,
   composeSelectionPrompt,
+  composeTerminalBareLaunchPrompt,
   OK_PROJECT_SKILL_POINTER,
+  OK_TERMINAL_SURFACE_PREAMBLE,
   withSkillPointer,
 } from './prompt-composer.ts';
 export {
