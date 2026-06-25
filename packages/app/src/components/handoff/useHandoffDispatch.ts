@@ -9,6 +9,7 @@ import {
   composeFilePrompt,
   composeFolderPrompt,
   composeSelectionPrompt,
+  composeTerminalBareLaunchPrompt,
   type DocContext,
   type HandoffOutcome,
   type HandoffPayload,
@@ -381,7 +382,11 @@ export function selectScopedPrompt(
 }
 
 export function composeTerminalLaunchPrompt(input: HandoffDispatchInput, cli: TerminalCli): string {
-  return selectScopedPrompt(input, TERMINAL_CLIS[cli].handoffTarget, false);
+  const hasInstruction = typeof input.instruction === 'string' && input.instruction.trim() !== '';
+  if (input.createDescription !== undefined || hasInstruction) {
+    return selectScopedPrompt(input, TERMINAL_CLIS[cli].handoffTarget, false);
+  }
+  return composeTerminalBareLaunchPrompt(input.docContext?.relativePath ?? null);
 }
 
 export async function runHandoffDispatch(

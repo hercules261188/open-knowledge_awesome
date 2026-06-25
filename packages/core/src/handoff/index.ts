@@ -13,7 +13,9 @@ export {
   composeFilePrompt,
   composeFolderPrompt,
   composeSelectionPrompt,
+  composeTerminalBareLaunchPrompt,
   OK_PROJECT_SKILL_POINTER,
+  OK_TERMINAL_SURFACE_PREAMBLE,
   withSkillPointer,
 } from './prompt-composer.ts';
 export {
