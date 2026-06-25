@@ -450,8 +450,13 @@ export function BottomComposer({
       >
         {pinnedSelection ? (
           <>
+            {/* `title` recovers the full label once it ellipsis-truncates (mirrors
+                the file chip's `title`). The cap sits a touch wider than the file
+                chip's max-w-[14rem] because selection labels carry a `(range)`
+                suffix. */}
             <span
               data-testid="composer-selection-pill"
+              title={pinnedLabel}
               className="group/chip inline-flex max-w-[16rem] items-center gap-1 rounded-md border bg-muted/40 py-0.5 pr-1.5 pl-1 text-muted-foreground text-xs"
             >
               {/* The LEADING glyph IS the remove control (mirrors the file chip):
@@ -491,9 +496,9 @@ export function BottomComposer({
                 }
                 onClick={() => setSelectionExpanded((open) => !open)}
                 data-testid="composer-selection-peek"
-                className="h-auto min-h-0 min-w-0 justify-start truncate px-0 py-0 text-left font-normal text-muted-foreground text-xs hover:bg-transparent hover:text-foreground"
+                className="h-auto min-h-0 min-w-0 shrink justify-start px-0 py-0 text-left font-normal text-muted-foreground text-xs hover:bg-transparent hover:text-foreground"
               >
-                {pinnedLabel}
+                <span className="min-w-0 truncate">{pinnedLabel}</span>
               </Button>
             </span>
             {selectionExpanded && pinnedPreview !== '' ? (
