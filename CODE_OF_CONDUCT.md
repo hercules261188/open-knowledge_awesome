@@ -22,4 +22,4 @@ We want Open Knowledge to be a respectful, practical, and welcoming project for 
 
 Maintainers may remove comments, close issues or pull requests, limit participation, or block users when behavior harms the project or its contributors.
 
-To report a conduct concern, contact an Inkeep maintainer privately when possible. Include relevant links, screenshots, or context.
+To report a conduct concern, email incidents@inkeep.com privately when possible. Include relevant links, screenshots, or context.

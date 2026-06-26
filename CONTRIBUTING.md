@@ -25,7 +25,7 @@ A short orientation, because the flow is unusual:
 
 External contributors must sign the [Inkeep Individual Contributor License Agreement](./CLA.md). After you open a PR, the CLA assistant will comment with a signing link. You only need to sign once for future contributions.
 
-If your employer requires a Corporate Contributor License Agreement, comment on your PR and an Inkeep maintainer will coordinate next steps.
+For corporate CLAs, see [CLA.md](./CLA.md).
 
 ## Development Setup
 
@@ -102,8 +102,8 @@ bun run changeset
 
 Open Knowledge is pre-1.0. Use these bump levels:
 
-- `patch` for bug fixes, UI improvements, and small user-visible additions.
-- `minor` for breaking API, schema, or CLI changes, and for large new surfaces.
+- `patch` for bug fixes, UI improvements, and small additions to existing surfaces.
+- `minor` for breaking API, schema, or CLI changes, and for large new surfaces such as a new CLI command, MCP tool, or editor feature.
 - Never declare `major` while Open Knowledge is pre-1.0.
 
 The packages release in a fixed group, so do not write inline references to sibling package versions in the changeset body. Release tooling computes those versions at publish time.

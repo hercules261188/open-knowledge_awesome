@@ -4,7 +4,7 @@
 
 ## How this was verified
 
-<!-- How you tested: `bun run check` output, manual steps, before/after screenshots for UI changes. -->
+<!-- What did you run or observe to confirm the change works? (test command, screenshot, manual steps) -->
 
 ## Checklist
 

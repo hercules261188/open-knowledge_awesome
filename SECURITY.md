@@ -11,7 +11,7 @@ Report security issues by emailing incidents@inkeep.com with:
 - The impact you believe the issue may have.
 - Any suggested mitigation.
 
-We will acknowledge reports as soon as practical and coordinate disclosure timelines directly with the reporter.
+We aim to acknowledge reports within 5 business days and coordinate disclosure timelines directly with the reporter. If you have not heard back, reply to your original email.
 
 ## Supported Versions
 
