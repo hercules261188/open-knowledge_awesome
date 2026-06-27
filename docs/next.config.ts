@@ -13,21 +13,37 @@ const nextConfig: NextConfig = {
   // through the rewrites below.
   skipTrailingSlashRedirect: true,
   async rewrites() {
-    return [
-      {
-        source: '/ingest/static/:path*',
-        destination: 'https://us-assets.i.posthog.com/static/:path*',
-      },
-      {
-        source: '/ingest/array/:path*',
-        destination: 'https://us-assets.i.posthog.com/array/:path*',
-      },
-      // Catch-all must come last — the static/array asset rules above must win.
-      {
-        source: '/ingest/:path*',
-        destination: 'https://us.i.posthog.com/:path*',
-      },
-    ];
+    return {
+      // Per-page raw Markdown for agents: `/docs/<slug>.md` (and `.mdx`) maps
+      // to the markdown route handler at `/llms.mdx/<slug>`. Must run in
+      // `beforeFiles` so it wins before the `/docs/[...slug]` page catch-all,
+      // which would otherwise match `…/overview.md` as a slug segment and 404.
+      beforeFiles: [
+        {
+          source: '/docs/:path*.md',
+          destination: '/llms.mdx/:path*',
+        },
+        {
+          source: '/docs/:path*.mdx',
+          destination: '/llms.mdx/:path*',
+        },
+      ],
+      afterFiles: [
+        {
+          source: '/ingest/static/:path*',
+          destination: 'https://us-assets.i.posthog.com/static/:path*',
+        },
+        {
+          source: '/ingest/array/:path*',
+          destination: 'https://us-assets.i.posthog.com/array/:path*',
+        },
+        // Catch-all must come last — the static/array asset rules above must win.
+        {
+          source: '/ingest/:path*',
+          destination: 'https://us.i.posthog.com/:path*',
+        },
+      ],
+    };
   },
   // HSTS with `includeSubDomains; preload` (Vercel's injected default is
   // max-age only). Chrome blocks a download when ANY hop in its redirect

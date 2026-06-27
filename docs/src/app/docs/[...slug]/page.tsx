@@ -1,7 +1,8 @@
 import { DocsBody, DocsDescription, DocsPage, DocsTitle } from 'fumadocs-ui/page';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { metaDescription, SITE_NAME, TWITTER_HANDLE } from '@/lib/site';
+import { PageMarkdownActions } from '@/components/page-markdown-actions';
+import { metaDescription, SITE_NAME, SITE_URL, TWITTER_HANDLE } from '@/lib/site';
 import { source } from '@/lib/source';
 import { getMDXComponents } from '@/mdx-components';
 
@@ -20,7 +21,14 @@ export default async function Page(props: PageProps<'/docs/[...slug]'>) {
       footer={hideFooter ? { enabled: false } : undefined}
       article={hideFooter ? { className: 'pb-12' } : undefined}
     >
-      <DocsTitle>{page.data.title}</DocsTitle>
+      <div className="flex items-start justify-between gap-4">
+        <DocsTitle>{page.data.title}</DocsTitle>
+        <PageMarkdownActions
+          className="mt-1.5 shrink-0"
+          markdownPath={`${page.url}.md`}
+          markdownUrl={`${SITE_URL}${page.url}.md`}
+        />
+      </div>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
         <MDX components={getMDXComponents()} />
