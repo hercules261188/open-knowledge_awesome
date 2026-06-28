@@ -356,7 +356,7 @@ function NavigatorCard({ title, description, onClick, dataTestId, Icon }: Naviga
         {Icon ? <Icon className="size-4 shrink-0 text-muted-foreground" /> : null}
         <span className="font-medium text-gray-700 dark:text-foreground text-sm">{title}</span>
       </div>
-      <span className="text-muted-foreground text-xs leading-snug">{description}</span>
+      <span className="line-clamp-2 text-muted-foreground text-xs leading-snug">{description}</span>
     </Button>
   );
 }

@@ -220,7 +220,7 @@ const PREVIEW_CONFIG: Record<string, PreviewConfig> = {
     ),
   },
   Mirror: {
-    description: msg`Read-only copy of a MirrorSource block from another doc. Edit at the source — every Mirror reflects the change live.`,
+    description: msg`Read-only copy of a MirrorSource block from another doc. Edit at the source and it updates live.`,
     render: () => (
       <div className="space-y-1.5">
         <div className="relative rounded-md border border-dashed border-border/40 px-2 py-1.5">
@@ -242,7 +242,7 @@ const PREVIEW_CONFIG: Record<string, PreviewConfig> = {
     ),
   },
   MirrorSource: {
-    description: msg`Mark a block as the source of truth. Mirror references elsewhere render this content read-only and update live as you edit here.`,
+    description: msg`Mark a block as the source of truth. Mirrors elsewhere update live as you edit it.`,
     render: () => (
       <div className="space-y-1.5">
         <div className="relative rounded-md border border-dashed border-border/50 px-2 py-1.5">

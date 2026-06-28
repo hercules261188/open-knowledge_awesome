@@ -161,7 +161,9 @@ function PackCard({ pack, onSelect }: PackCardProps) {
           <h3 className="text-sm font-medium leading-tight">{pack.name}</h3>
         </div>
 
-        <p className="text-1sm leading-relaxed text-muted-foreground">{pack.description}</p>
+        <p className="line-clamp-2 text-1sm leading-relaxed text-muted-foreground">
+          {pack.description}
+        </p>
       </div>
     </button>
   );

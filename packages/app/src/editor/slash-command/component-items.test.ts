@@ -65,6 +65,18 @@ describe('getComponentItems (slash menu)', () => {
       expect(items.some((i) => i.name === `component-${compatName}`)).toBe(false);
     }
   });
+
+  test('every component preview description fits the slash aside 3-line budget (<= 120 chars)', () => {
+    const MAX_PREVIEW_DESCRIPTION_LENGTH = 120;
+    const descriptions = getComponentItems()
+      .map((i) => i.preview?.description)
+      .filter((d): d is string => typeof d === 'string');
+    expect(descriptions.length).toBeGreaterThan(0);
+    const tooLong = descriptions
+      .filter((d) => d.length > MAX_PREVIEW_DESCRIPTION_LENGTH)
+      .map((d) => `${d.length} chars: ${d.slice(0, 50)}`);
+    expect(tooLong).toEqual([]);
+  });
 });
 
 describe('createChildNode — default props on slash insert', () => {

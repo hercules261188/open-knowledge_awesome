@@ -497,8 +497,6 @@ function ShareReceiveDialogInner({
   const cloneEnabled = cloneController !== undefined && !cloneRunning;
   const cloneLabel = cloneRunning ? t`Cloning...` : t`Clone to a new folder`;
 
-  const shareOwner = share.owner;
-  const shareRepo = share.repo;
   const lookingForUrl = canonicalGitHubRemoteUrl(expected);
   const signedInLogin = authStatus?.authenticated ? authStatus.login : undefined;
   const cloneErrorMessage = cloneError?.detail ? formatCloneErrorMessage(cloneError.detail) : '';
@@ -605,10 +603,8 @@ function ShareReceiveDialogInner({
                 aria-disabled={cloneController !== undefined && !cloneEnabled}
               >
                 <span className="text-sm font-semibold">{cloneLabel}</span>
-                <span className="text-1sm text-muted-foreground">
-                  <Trans>
-                    Downloads {shareOwner}/{shareRepo} from GitHub.
-                  </Trans>
+                <span className="line-clamp-2 text-1sm text-muted-foreground">
+                  <Trans>Downloads a fresh copy from GitHub.</Trans>
                 </span>
               </button>
               <button
@@ -623,7 +619,7 @@ function ShareReceiveDialogInner({
                 <span className="text-sm font-semibold">
                   <Trans>I already have it locally →</Trans>
                 </span>
-                <span className="text-1sm text-muted-foreground">
+                <span className="line-clamp-2 text-1sm text-muted-foreground">
                   <Trans>Pick the folder where you've cloned it.</Trans>
                 </span>
               </button>

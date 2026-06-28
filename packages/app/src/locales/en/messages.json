@@ -10,9 +10,6 @@
     "-3ois8": ["Hard break"],
     "-8PP0T": ["Match case"],
     "-K0AvT": ["Disconnect"],
-    "-KCZ6n": [
-      "Mark a block as the source of truth. Mirror references elsewhere render this content read-only and update live as you edit here."
-    ],
     "-LHLx7": ["edited template"],
     "-QCLWk": ["Templates available"],
     "-Qw-1t": ["GitHub authentication failed. Try signing in again."],
@@ -348,9 +345,6 @@
     "8PmoQF": ["Open the insert menu in an empty or active text position."],
     "8RtNI0": ["Failed to load documents"],
     "8S1E33": ["Search recent projects..."],
-    "8TLE9g": [
-      "Read-only copy of a MirrorSource block from another doc. Edit at the source — every Mirror reflects the change live."
-    ],
     "8XQRON": ["Loading repositories"],
     "8_brI5": ["Name is required"],
     "8cS0nH": ["Config sharing unavailable: ", ["0"], "."],
@@ -1274,6 +1268,9 @@
     "_TF8ep": ["Failed to render PDF"],
     "_VRtd7": ["Couldn't send the selection — please try again."],
     "_W-elG": ["(inline)"],
+    "_WPP7e": [
+      "Read-only copy of a MirrorSource block from another doc. Edit at the source and it updates live."
+    ],
     "_XWY2J": ["Terminal disabled"],
     "_bth6g": ["Claude Code is installed, but OpenKnowledge tools aren't connected to it yet."],
     "_eguJc": ["Uploading"],
@@ -1415,6 +1412,9 @@
     "el312q": ["Install skills into"],
     "emgiet": ["Authoritative content; mirrored verbatim everywhere it's referenced."],
     "eneWvv": ["Draft"],
+    "epuNYK": [
+      "Mark a block as the source of truth. Mirrors elsewhere update live as you edit it."
+    ],
     "euc6Ns": ["Duplicate"],
     "evs0iw": ["Tags matching \"", ["tagListQuery"], "\""],
     "f1XQyZ": ["Move block"],
@@ -1437,6 +1437,7 @@
     "fbsiBw": ["Something went wrong starting the terminal."],
     "fcgvCA": ["Claude"],
     "fiMNLl": ["Sync settings not yet loaded — try again in a moment"],
+    "fj5YiP": ["Downloads a fresh copy from GitHub."],
     "fo0VXg": ["Uninstall"],
     "fqSfXY": ["Replace"],
     "fwhX-N": ["Indent or outdent source"],
@@ -1555,7 +1556,6 @@
     "jBVUXo": ["Couldn't open the terminal — please try again."],
     "jEZ6Lf": ["provisional"],
     "jEdF24": ["Missing page: ", ["linkTitle"], ". Click to create."],
-    "jGJy-9": ["Downloads ", ["shareOwner"], "/", ["shareRepo"], " from GitHub."],
     "jKd3AP": ["Could not enable the terminal: ", ["0"]],
     "jPUPvG": ["Couldn't resolve the conflict for ", ["filePath"], "."],
     "jRHdCz": ["Failed to load PDF"],

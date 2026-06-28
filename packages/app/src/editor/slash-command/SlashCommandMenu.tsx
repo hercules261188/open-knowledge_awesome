@@ -146,7 +146,7 @@ export function SlashCommandMenu({
               <div className="mb-2 flex aspect-5/3 items-center justify-center overflow-hidden rounded-md bg-muted/40 p-3 *:max-h-full *:max-w-full [&_img]:size-full [&_img]:rounded-md [&_img]:object-contain">
                 {selectedItem.preview.render()}
               </div>
-              <p className="px-1 pb-1 text-xs text-muted-foreground">
+              <p className="line-clamp-3 px-1 pb-1 text-xs text-muted-foreground">
                 {selectedItem.preview.description}
               </p>
             </>

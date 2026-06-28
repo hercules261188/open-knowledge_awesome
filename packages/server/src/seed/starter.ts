@@ -1390,7 +1390,7 @@ export const STARTER_PACKS: Readonly<Record<PackId, StarterPack>> = {
   'codebase-wiki': {
     id: 'codebase-wiki',
     name: 'Codebase wiki',
-    description: 'Architecture, modules, and flows.',
+    description: 'A wiki to help navigate your codebase.',
     defaultSubfolder: undefined,
     folders: CODEBASE_WIKI_FOLDERS,
     templates: CODEBASE_WIKI_TEMPLATES,

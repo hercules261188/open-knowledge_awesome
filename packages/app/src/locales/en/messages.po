@@ -2169,8 +2169,8 @@ msgid "Download started"
 msgstr "Download started"
 
 #: src/components/ShareReceiveDialog.tsx
-msgid "Downloads {shareOwner}/{shareRepo} from GitHub."
-msgstr "Downloads {shareOwner}/{shareRepo} from GitHub."
+msgid "Downloads a fresh copy from GitHub."
+msgstr "Downloads a fresh copy from GitHub."
 
 #: src/components/SkillEditorActions.tsx
 #: src/components/SkillStateBadge.tsx
@@ -3572,8 +3572,8 @@ msgid "Map the architecture"
 msgstr "Map the architecture"
 
 #: src/editor/slash-command/component-items.tsx
-msgid "Mark a block as the source of truth. Mirror references elsewhere render this content read-only and update live as you edit here."
-msgstr "Mark a block as the source of truth. Mirror references elsewhere render this content read-only and update live as you edit here."
+msgid "Mark a block as the source of truth. Mirrors elsewhere update live as you edit it."
+msgstr "Mark a block as the source of truth. Mirrors elsewhere update live as you edit it."
 
 #: src/components/EditorModeToggle.tsx
 msgid "Markdown"
@@ -4837,8 +4837,8 @@ msgid "Read through this codebase and draft a technical spec for the most comple
 msgstr "Read through this codebase and draft a technical spec for the most complex module: an overview, the architecture, key files, and open questions, all linked from a specs index page."
 
 #: src/editor/slash-command/component-items.tsx
-msgid "Read-only copy of a MirrorSource block from another doc. Edit at the source — every Mirror reflects the change live."
-msgstr "Read-only copy of a MirrorSource block from another doc. Edit at the source — every Mirror reflects the change live."
+msgid "Read-only copy of a MirrorSource block from another doc. Edit at the source and it updates live."
+msgstr "Read-only copy of a MirrorSource block from another doc. Edit at the source and it updates live."
 
 #: src/components/TrashFailureModal.tsx
 msgid "Reason: {reason}"

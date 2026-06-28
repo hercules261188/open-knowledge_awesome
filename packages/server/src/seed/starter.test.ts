@@ -168,6 +168,14 @@ describe('STARTER_PACKS — all packs structural validation', () => {
     }
   });
 
+  const MAX_PACK_DESCRIPTION_LENGTH = 64;
+  test(`every pack description fits the picker card's 2-line budget (<= ${MAX_PACK_DESCRIPTION_LENGTH} chars)`, () => {
+    const tooLong = Object.values(STARTER_PACKS)
+      .filter((pack) => pack.description.length > MAX_PACK_DESCRIPTION_LENGTH)
+      .map((pack) => `${pack.id} (${pack.description.length} chars)`);
+    expect(tooLong).toEqual([]);
+  });
+
   test('every folder starterTemplate + extraTemplates resolves to a body in pack.templates', () => {
     for (const pack of Object.values(STARTER_PACKS)) {
       for (const folder of pack.folders) {
