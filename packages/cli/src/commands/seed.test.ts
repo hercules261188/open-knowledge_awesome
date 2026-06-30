@@ -93,6 +93,24 @@ describe('runSeed — --dry-run', () => {
       expect(existsSync(join(testDir, folder.path))).toBe(false);
     }
   });
+
+  test('previews in an uninitialized dir without requiring `ok init`', async () => {
+    const result = await runSeed({ cwd: testDir, pack: 'knowledge-base', dryRun: true });
+    expect(result.status).toBe('dry-run');
+    expect(result.exitCode).toBe(0);
+    for (const folder of STARTER_FOLDERS) {
+      expect(existsSync(join(testDir, folder.path))).toBe(false);
+    }
+    expect(existsSync(join(testDir, OK_DIR, CONFIG_FILENAME))).toBe(false);
+  });
+
+  test('returns no-op (not dry-run) when the directory is already fully seeded', async () => {
+    scaffoldOkDir(testDir);
+    await runSeed({ cwd: testDir, yes: true });
+    const result = await runSeed({ cwd: testDir, dryRun: true });
+    expect(result.status).toBe('no-op');
+    expect(result.exitCode).toBe(0);
+  });
 });
 
 describe('runSeed — no-op', () => {

@@ -48,7 +48,12 @@ export async function runSeed(opts: SeedCommandOptions = {}): Promise<SeedComman
 
   let plan: ScaffoldPlan;
   try {
-    plan = await planSeed({ projectDir: cwd, rootDir: opts.root, packId });
+    plan = await planSeed({
+      projectDir: cwd,
+      rootDir: opts.root,
+      packId,
+      skipPrerequisite: opts.dryRun === true,
+    });
   } catch (err) {
     if (err instanceof SeedPrerequisiteError) {
       return {

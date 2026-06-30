@@ -40,7 +40,7 @@ function joinRelative(root: string, path: string): string {
 export async function planSeed(opts: SeedOptions = {}): Promise<ScaffoldPlan> {
   const projectDir = resolve(opts.projectDir ?? process.cwd());
 
-  if (!isProjectRoot(projectDir)) {
+  if (!opts.skipPrerequisite && !isProjectRoot(projectDir)) {
     throw new SeedPrerequisiteError(
       `No ${OK_PROJECT_MARKER} found at ${projectDir}. Run \`ok init\` first to scaffold the tool config.`,
     );

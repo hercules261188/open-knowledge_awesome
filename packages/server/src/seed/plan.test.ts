@@ -42,6 +42,17 @@ describe('planSeed — nested .ok/ era', () => {
     }
   });
 
+  test('skipPrerequisite bypasses the gate — previews an all-created plan in a bare dir', async () => {
+    const bare = await mkdtemp(join(tmpdir(), 'seed-preview-'));
+    try {
+      const plan = await planSeed({ projectDir: bare, skipPrerequisite: true });
+      expect(plan.created.length).toBeGreaterThan(0);
+      expect(plan.skipped.length).toBe(0);
+    } finally {
+      await rm(bare, { recursive: true, force: true });
+    }
+  });
+
   test('plans every starter folder + nested .ok/ + frontmatter.yml + templates/<name>.md', async () => {
     const plan = await planSeed({ projectDir });
     const createdPaths = new Set(plan.created.map((e) => e.path));

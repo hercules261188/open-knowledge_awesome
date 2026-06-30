@@ -35,6 +35,7 @@ export interface SeedOptions {
   projectDir?: string;
   rootDir?: string;
   packId?: PackId;
+  skipPrerequisite?: boolean;
 }
 
 export class SeedPrerequisiteError extends Error {
