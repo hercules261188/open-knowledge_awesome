@@ -6,6 +6,9 @@ import type {
   LocalOpOkInitResponse,
   OkFolderState,
   TerminalCli,
+  WorktreeCreateRequest,
+  WorktreeCreateResult,
+  WorktreeListResult,
 } from '@inkeep/open-knowledge-core';
 import type {
   FindEnclosingGitRootResult,
@@ -66,6 +69,10 @@ export interface RecentProject {
   lastOpenedAt: string;
   missing?: boolean;
   gitRemoteUrl?: string;
+  gitCommonDir?: string;
+  mainRoot?: string;
+  isLinkedWorktree?: boolean;
+  branch?: string | null;
 }
 
 interface ProjectOpenRequest {
@@ -336,6 +343,10 @@ export interface RequestChannels {
   'ok:project:ok-init': {
     args: [request: { projectPath: string }];
     result: LocalOpOkInitResponse;
+  };
+  'ok:worktree:dispatch': {
+    args: [request: { kind: 'list' } | ({ kind: 'create' } & WorktreeCreateRequest)];
+    result: WorktreeListResult | WorktreeCreateResult;
   };
   'ok:project:close': { args: []; result: undefined };
   'ok:project:restart-server': { args: [projectPath: string]; result: OkServerRestartOutcome };
