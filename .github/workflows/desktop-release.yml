@@ -458,6 +458,50 @@ jobs:
             echo "::warning::Slack announcement failed for ${RELEASE_TAG} (release is published; notification is best-effort)."
           fi
 
+      # Announce STABLE releases to Discord
+      - name: Announce stable release to Discord
+        if: success() && steps.channel.outputs.channel == 'latest' && github.event_name != 'workflow_dispatch'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.client_payload.release_tag || inputs.release_tag }}
+          VERSION: ${{ steps.channel.outputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${DISCORD_WEBHOOK_URL:-}" ]]; then
+            echo "::notice::DISCORD_WEBHOOK_URL not set — skipping Discord announcement for ${RELEASE_TAG}."
+            exit 0
+          fi
+          RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_TAG}"
+          NOTES="$(gh release view "$RELEASE_TAG" --json body --jq '.body' 2>/dev/null || true)"
+          NOTES_LIMIT=3500
+          if [[ "${#NOTES}" -gt "$NOTES_LIMIT" ]]; then
+            NOTES="${NOTES:0:$NOTES_LIMIT}…"
+          fi
+          payload="$(jq -n \
+            --arg version "$VERSION" \
+            --arg release_url "$RELEASE_URL" \
+            --arg notes "$NOTES" \
+            '{
+              username: "OpenKnowledge",
+              allowed_mentions: { parse: [] },
+              content: ("🎉 OpenKnowledge \($version) released — " + $release_url),
+              embeds: [
+                { title: ("OpenKnowledge \($version) released"),
+                  url: $release_url,
+                  color: 3638527,
+                  description: (
+                    (if ($notes | length) > 0 then ($notes + "\n\n") else "" end)
+                    + "[Release notes & downloads](\($release_url))"
+                  ) }
+              ]
+            }')"
+          if curl -sS --fail -X POST -H 'Content-Type: application/json' --data "$payload" "$DISCORD_WEBHOOK_URL"; then
+            echo "Posted stable-release announcement for ${RELEASE_TAG} to Discord."
+          else
+            echo "::warning::Discord announcement failed for ${RELEASE_TAG} (release is published; notification is best-effort)."
+          fi
+
       # Lightweight discoverability for stuck-draft state when the promote
       # step (or the build/upload step before it) fails. NOT a substitute
       # for the full paging-design observability deferred in the PR body —

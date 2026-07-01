@@ -1,4 +1,3 @@
-
 import { readFileSync } from 'node:fs';
 import { basename, sep } from 'node:path';
 import { parseCsv } from './csv.ts';

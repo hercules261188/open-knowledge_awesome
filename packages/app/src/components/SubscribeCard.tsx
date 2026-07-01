@@ -1,4 +1,3 @@
-
 import { Trans, useLingui } from '@lingui/react/macro';
 import type { ComponentProps, FC } from 'react';
 import { useEffect, useState } from 'react';

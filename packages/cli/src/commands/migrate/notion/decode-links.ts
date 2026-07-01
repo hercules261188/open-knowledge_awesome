@@ -1,4 +1,3 @@
-
 const EXTERNAL = /^[a-z][a-z0-9+.-]*:/i;
 const FENCE = /^\s*(`{3,}|~{3,})/;
 const CSV_TABLE_TARGET = /_all\.csv(?=$|[#?])/i;

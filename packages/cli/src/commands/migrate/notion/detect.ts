@@ -14,8 +14,7 @@ export function isNotionExport(dir: string): boolean {
     if (!/\.mdx?$/i.test(f)) continue;
     try {
       if (BASE64_IMAGE.test(readFileSync(f, 'utf8'))) return true;
-    } catch {
-    }
+    } catch {}
   }
   return false;
 }

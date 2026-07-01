@@ -1,4 +1,3 @@
-
 export interface Base64Result {
   markdown: string;
   assets: Array<{ filename: string; bytes: Uint8Array }>;

@@ -1,4 +1,3 @@
-
 import { parseCsv } from './csv.ts';
 
 export interface RenderTableOptions {

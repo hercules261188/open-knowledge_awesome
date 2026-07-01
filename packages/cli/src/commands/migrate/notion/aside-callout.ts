@@ -1,4 +1,3 @@
-
 const ASIDE = /<aside>\s*([\s\S]*?)\s*<\/aside>/g;
 const LEADING_EMOJI = /^(?:\p{Extended_Pictographic}️?\s*)+/u;
 

@@ -1,4 +1,3 @@
-
 const ILLEGAL_PUNCT = /[*"/\\<>:|?()]/g;
 const DOC_EXT = /\.(md|mdx)$/i;
 const TRAILING_ID = /\s+[0-9a-f]{32}$/i;
@@ -7,8 +6,7 @@ export function normalizeKey(input: string): string {
   let v = input.split(/[\\/]/).pop() ?? input;
   try {
     v = decodeURIComponent(v);
-  } catch {
-  }
+  } catch {}
   v = v.replace(DOC_EXT, '');
   v = v.replace(TRAILING_ID, '');
   v = v.replace(ILLEGAL_PUNCT, '');
