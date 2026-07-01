@@ -3,12 +3,14 @@ import { DM_Sans, Inter, JetBrains_Mono } from 'next/font/google';
 import type { Organization, WebSite, WithContext } from 'schema-dts';
 import { JsonLd } from '@/components/seo/json-ld';
 import {
+  GITHUB_URL,
   metaDescription,
   SITE_DESCRIPTION,
   SITE_HEADLINE,
   SITE_NAME,
   SITE_URL,
   TWITTER_HANDLE,
+  X_URL,
 } from '@/lib/site';
 import './global.css';
 import { Provider } from './provider';
@@ -40,7 +42,7 @@ const orgLd = {
   description:
     'Ship Agent-powered assistants and automations that boost customer experience and 10x your teams.',
   foundingDate: '2023',
-  sameAs: ['https://x.com/OpenKnowledgeAI', 'https://github.com/inkeep/open-knowledge'],
+  sameAs: [X_URL, GITHUB_URL],
 } satisfies WithContext<Organization>;
 
 const siteLd = {

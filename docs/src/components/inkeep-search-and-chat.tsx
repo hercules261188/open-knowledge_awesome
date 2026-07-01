@@ -8,7 +8,7 @@ import {
 import type { SharedProps } from 'fumadocs-ui/components/dialog/search';
 import { usePathname } from 'next/navigation';
 import type { FC } from 'react';
-import { SITE_URL } from '@/lib/site';
+import { GITHUB_URL, SITE_URL } from '@/lib/site';
 
 const apiKey = process.env.NEXT_PUBLIC_INKEEP_API_KEY;
 
@@ -81,7 +81,7 @@ const InkeepSearchAndChat: FC<SharedProps> = ({ open, onOpenChange }) => {
           icon: { builtIn: 'FaGithub' },
           action: {
             type: 'open_link',
-            url: 'https://github.com/inkeep/open-knowledge',
+            url: GITHUB_URL,
           },
         },
       ],

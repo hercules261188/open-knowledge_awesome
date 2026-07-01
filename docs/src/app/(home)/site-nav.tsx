@@ -9,7 +9,7 @@ import { GitHubIcon } from '@/components/icons/github';
 import { XIcon } from '@/components/icons/x';
 import { OkWordmark } from '@/components/ok-wordmark';
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { DOWNLOAD_ROUTE } from '@/lib/site';
+import { DISCORD_URL, DOWNLOAD_ROUTE, GITHUB_URL, X_URL } from '@/lib/site';
 import { MarketingButton } from './marketing-button';
 
 type NavLink = {
@@ -32,14 +32,14 @@ const docsLink: NavLink = {
 
 const socialLinks: NavLink[] = [
   {
-    href: 'https://x.com/OpenKnowledgeAI',
+    href: X_URL,
     label: 'X (Twitter)',
     external: true,
     icon: XIcon,
     iconOnly: true,
   },
   {
-    href: 'https://discord.com/invite/YujKpFN49',
+    href: DISCORD_URL,
     label: 'Discord',
     external: true,
     icon: DiscordIcon,
@@ -48,7 +48,7 @@ const socialLinks: NavLink[] = [
 ];
 
 const githubLink: NavLink = {
-  href: 'https://github.com/inkeep/open-knowledge',
+  href: GITHUB_URL,
   label: 'GitHub',
   external: true,
   icon: GitHubIcon,

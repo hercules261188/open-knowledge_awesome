@@ -85,6 +85,22 @@
   }
 }
 
+/* Map Fumadocs' neutral primary/ring onto brand azure so docs links, active
+   nav, the primary button, and focus rings read on-brand rather than the
+   preset near-black. Deliberately UNLAYERED: neutral.css defines its dark
+   values in a plain (unlayered) `.dark {}` rule, and unlayered rules always
+   win over `@layer` ones — so a `@layer base` override would lose in dark mode
+   (falls through to the preset's #fafafa). Light hex matches --slide-accent /
+   azure-blue; dark is the lighter --slide-accent for legibility on the dark bg. */
+:root {
+  --color-fd-primary: #3784ff;
+  --color-fd-ring: #3784ff;
+}
+.dark {
+  --color-fd-primary: #69a3ff;
+  --color-fd-ring: #69a3ff;
+}
+
 .subtle-scrollbar {
   @apply scrollbar-thin scrollbar-track-transparent scrollbar-thumb-fd-muted-foreground/30 dark:scrollbar-thumb-fd-muted-foreground/50;
 }

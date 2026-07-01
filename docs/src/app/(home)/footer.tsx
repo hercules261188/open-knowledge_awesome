@@ -4,12 +4,13 @@ import { GitHubIcon } from '@/components/icons/github';
 import { XIcon } from '@/components/icons/x';
 import { InkeepLogo } from '@/components/inkeep-logo';
 import { SubscribeForm } from '@/components/subscribe-form';
+import { DISCORD_URL, GITHUB_URL, X_URL } from '@/lib/site';
 import { DotTexture } from './dot-texture';
 
 const socialLinks = [
-  { href: 'https://github.com/inkeep/open-knowledge', label: 'GitHub', Icon: GitHubIcon },
-  { href: 'https://discord.com/invite/YujKpFN49', label: 'Discord', Icon: DiscordIcon },
-  { href: 'https://x.com/OpenKnowledgeAI', label: 'X', Icon: XIcon },
+  { href: GITHUB_URL, label: 'GitHub', Icon: GitHubIcon },
+  { href: DISCORD_URL, label: 'Discord', Icon: DiscordIcon },
+  { href: X_URL, label: 'X', Icon: XIcon },
 ];
 
 const legalLinks = [

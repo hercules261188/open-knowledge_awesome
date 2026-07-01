@@ -3,6 +3,10 @@ import { STABLE_DMG_URL } from './download-links';
 export const SITE_URL = 'https://openknowledge.ai';
 export const SITE_NAME = 'OpenKnowledge';
 export const TWITTER_HANDLE = '@OpenKnowledgeAI';
+
+export const GITHUB_URL = 'https://github.com/inkeep/open-knowledge';
+export const DISCORD_URL = 'https://discord.com/invite/YujKpFN49';
+export const X_URL = `https://x.com/${TWITTER_HANDLE.slice(1)}`;
 export const SITE_DESCRIPTION =
   'An agent-native knowledge platform where humans and AI co-create. Real-time CRDT editing, markdown-native, connected to any AI agent via MCP.';
 

@@ -1,5 +1,6 @@
 ---
 title: Core Concepts
+icon: LuLightbulb
 description: "How OpenKnowledge works: the three-layer model, the file system as the database, links and backlinks, the well-connected knowledge base, and attribution."
 ---
 

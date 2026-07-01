@@ -1,6 +1,6 @@
 import type { SoftwareApplication, WithContext } from 'schema-dts';
 import { JsonLd } from '@/components/seo/json-ld';
-import { DOWNLOAD_URL, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/site';
+import { DOWNLOAD_URL, GITHUB_URL, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/site';
 import { SiteFooter } from './footer';
 import { CallToAction } from './sections/call-to-action';
 import { Collaboration } from './sections/collaboration';
@@ -30,7 +30,7 @@ const softwareAppLd = {
     name: 'Inkeep',
     url: 'https://inkeep.com',
   },
-  sameAs: 'https://github.com/inkeep/open-knowledge',
+  sameAs: GITHUB_URL,
 } satisfies WithContext<SoftwareApplication>;
 
 export default function HomePage() {
