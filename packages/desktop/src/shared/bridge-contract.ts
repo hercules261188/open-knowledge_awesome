@@ -7,6 +7,9 @@ import type {
   LocalOpOkInitResponse,
   OkFolderState,
   TerminalCli,
+  WorktreeCreateRequest,
+  WorktreeCreateResult,
+  WorktreeListResult,
 } from '@inkeep/open-knowledge-core';
 
 export type { BridgeWorktreeEntry };
@@ -110,7 +113,9 @@ export type OkMenuAction =
   | 'toggle-doc-panel'
   | 'toggle-terminal'
   | 'new-terminal'
-  | 'kill-terminal';
+  | 'kill-terminal'
+  | 'new-worktree'
+  | 'switch-worktree';
 
 type OkUnsubscribe = () => void;
 
@@ -586,6 +591,11 @@ export interface OkDesktopBridge {
     }): Promise<{ ok: true } | { ok: false; reason: 'timeout' | 'project-not-open' }>;
     okInit(request: { projectPath: string }): Promise<LocalOpOkInitResponse>;
     close(): Promise<void>;
+  };
+
+  worktree: {
+    list(): Promise<WorktreeListResult>;
+    create(request: WorktreeCreateRequest): Promise<WorktreeCreateResult>;
   };
 
   sharing: {

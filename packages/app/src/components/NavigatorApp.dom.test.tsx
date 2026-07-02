@@ -200,4 +200,61 @@ describe('NavigatorApp launcher runtime behavior', () => {
       });
     });
   });
+
+  test('labels a linked-worktree recent with its branch over its base project, leaving plain projects unchanged', async () => {
+    const bridge = createBridge();
+    bridge.project.listRecent = mock(() =>
+      Promise.resolve([
+        {
+          path: '/Users/x/pnw-fishing/.ok/worktrees/dev',
+          name: 'dev',
+          isLinkedWorktree: true,
+          mainRoot: '/Users/x/pnw-fishing',
+          branch: 'dev',
+        },
+        { path: '/Users/x/plain-notes', name: 'Plain Notes' },
+      ]),
+    );
+    await renderNavigator(bridge);
+
+    const list = await screen.findByTestId('nav-recent-list');
+    expect(list.textContent).toContain('dev');
+    expect(list.textContent).toContain('pnw-fishing');
+    expect(list.textContent).toContain('Plain Notes');
+    expect(list.textContent).toContain('/Users/x/plain-notes');
+  });
+
+  test('gives worktree and plain-project recents distinct icon tiles', async () => {
+    const bridge = createBridge();
+    bridge.project.listRecent = mock(() =>
+      Promise.resolve([
+        {
+          path: '/Users/x/pnw-fishing/.ok/worktrees/dev',
+          name: 'dev',
+          isLinkedWorktree: true,
+          mainRoot: '/Users/x/pnw-fishing',
+          branch: 'dev',
+        },
+        { path: '/Users/x/plain-notes', name: 'Plain Notes' },
+      ]),
+    );
+    await renderNavigator(bridge);
+
+    const list = await screen.findByTestId('nav-recent-list');
+    const rows = list.querySelectorAll('li');
+    expect(rows.length).toBe(2);
+
+    const [worktreeRow, plainRow] = rows;
+    if (!worktreeRow || !plainRow) throw new Error('expected two recent rows');
+
+    expect(worktreeRow.querySelector('svg.lucide-git-branch')).not.toBeNull();
+    expect(worktreeRow.querySelector('svg.lucide-folder')).toBeNull();
+    expect(worktreeRow.textContent).toContain('dev');
+    expect(worktreeRow.textContent).toContain('worktree of pnw-fishing');
+
+    expect(plainRow.querySelector('svg.lucide-folder')).not.toBeNull();
+    expect(plainRow.querySelector('svg.lucide-git-branch')).toBeNull();
+    expect(plainRow.textContent).toContain('Plain Notes');
+    expect(plainRow.textContent).toContain('/Users/x/plain-notes');
+  });
 });

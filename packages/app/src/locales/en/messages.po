@@ -13,10 +13,6 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/components/ProjectSwitcher.tsx
-msgid "  (missing)"
-msgstr "  (missing)"
-
 #: src/components/settings/SettingsDialogBody.tsx
 msgid " or "
 msgstr " or "
@@ -61,6 +57,10 @@ msgstr "\"frontmatter\" is a reserved property name"
 #: src/components/ShareReceiveDialog.tsx
 msgid "(a worktree of {0})"
 msgstr "(a worktree of {0})"
+
+#: src/components/RecentProjectsMenu.tsx
+msgid "(detached)"
+msgstr "(detached)"
 
 #: src/editor/components/PreviewBlockedNotice.tsx
 msgid "(inline)"
@@ -125,6 +125,11 @@ msgstr "{0, plural, one {# request blocked by the preview's security policy} oth
 msgid "{0, plural, one {# use} other {# uses}}"
 msgstr "{0, plural, one {# use} other {# uses}}"
 
+#. placeholder {0}: group.worktrees.length
+#: src/components/RecentProjectsMenu.tsx
+msgid "{0, plural, one {worktree} other {worktrees}}"
+msgstr "{0, plural, one {worktree} other {worktrees}}"
+
 #. placeholder {0}: templates.length
 #: src/components/empty-state/CreateView.tsx
 msgid "{0} templates available"
@@ -178,6 +183,10 @@ msgstr "{behind, plural, one {# commit behind} other {# commits behind}}"
 #: src/components/SyncStatusBadge.tsx
 msgid "{behind} behind"
 msgstr "{behind} behind"
+
+#: src/components/NewWorktreeDialog.tsx
+msgid "{behind} behind origin"
+msgstr "{behind} behind origin"
 
 #: src/components/EditorFooter.tsx
 msgid "{chars, plural, one {char} other {chars}}"
@@ -443,6 +452,10 @@ msgstr "<0>Mirror source removed.</0> The doc <1>{src}</1> is no longer availabl
 msgid "📝 or assets/icon.png"
 msgstr "📝 or assets/icon.png"
 
+#: src/components/NewWorktreeDialog.tsx
+msgid "A branch with that name already exists. Open its worktree from the switcher instead."
+msgstr "A branch with that name already exists. Open its worktree from the switcher instead."
+
 #: src/components/CreateProjectDialog.tsx
 msgid "A folder named <0>{sanitized}</0> already has files here. Pick a different name."
 msgstr "A folder named <0>{sanitized}</0> already has files here. Pick a different name."
@@ -507,6 +520,10 @@ msgstr "A template named <0>{trimmedSlug}</0> already exists here. Saving create
 #: src/components/FolderPropertiesCard.tsx
 msgid "A title, description, tags — anything that describes this folder."
 msgstr "A title, description, tags — anything that describes this folder."
+
+#: src/components/NewWorktreeDialog.tsx
+msgid "A worktree folder for that branch already exists."
+msgstr "A worktree folder for that branch already exists."
 
 #: src/editor/slash-command/items.tsx
 msgid "Above"
@@ -789,9 +806,17 @@ msgstr "Auto-sync is off — you don't have permission to push to this repo"
 msgid "Auto-sync is off — your edits stay local until you commit and push manually."
 msgstr "Auto-sync is off — your edits stay local until you commit and push manually."
 
+#: src/hooks/use-worktree-autosync-notice.tsx
+msgid "Auto-sync is off for this worktree, inherited from {project}. Change it in Settings → Sync."
+msgstr "Auto-sync is off for this worktree, inherited from {project}. Change it in Settings → Sync."
+
 #: src/components/settings/SettingsDialogBody.tsx
 msgid "Auto-sync is on — your commits push and remote changes pull on intervals."
 msgstr "Auto-sync is on — your commits push and remote changes pull on intervals."
+
+#: src/hooks/use-worktree-autosync-notice.tsx
+msgid "Auto-sync is on for this worktree, inherited from {project}. Change it in Settings → Sync."
+msgstr "Auto-sync is on for this worktree, inherited from {project}. Change it in Settings → Sync."
 
 #: src/components/AutoSyncEnableWarning.tsx
 msgid "Auto-sync periodically fetches, pulls, and pushes commits to your remote git repository so your edits stay in sync across machines."
@@ -833,6 +858,10 @@ msgstr "Backlinks"
 #: src/components/LinksPanel.tsx
 msgid "Backlinks response did not match expected shape."
 msgstr "Backlinks response did not match expected shape."
+
+#: src/components/NewWorktreeDialog.tsx
+msgid "Base branch"
+msgstr "Base branch"
 
 #: src/components/TemplateBody.tsx
 msgid "Becomes the document's content when someone creates a doc from this template. Type <0>{dateToken}</0> or <1>{userToken}</1> to fill in today's date or the author's name automatically."
@@ -902,6 +931,14 @@ msgstr "Branch {shareBranch} no longer exists on the remote."
 #: src/components/ShareBranchSwitchDialog.tsx
 msgid "Branch <0>{shareBranch}</0> is checked out in:"
 msgstr "Branch <0>{shareBranch}</0> is checked out in:"
+
+#: src/components/NewWorktreeDialog.tsx
+msgid "Branch <0>{trimmed}</0> already has a worktree — it'll open in its own window."
+msgstr "Branch <0>{trimmed}</0> already has a worktree — it'll open in its own window."
+
+#: src/components/NewWorktreeDialog.tsx
+msgid "Branch name"
+msgstr "Branch name"
 
 #: src/components/ShareBranchSwitchDialog.tsx
 msgid "Branch switch failed — try opening the {targetNoun} manually."
@@ -981,6 +1018,7 @@ msgstr "Can't nest projects. An OpenKnowledge project already exists at <0>{root
 #: src/components/NewItemDialog.tsx
 #: src/components/NewSkillDialog.tsx
 #: src/components/NewTemplateDialog.tsx
+#: src/components/NewWorktreeDialog.tsx
 #: src/components/PublishToGitHubDialog.tsx
 #: src/components/SeedDialog.tsx
 #: src/components/settings/SearchSection.tsx
@@ -1003,6 +1041,14 @@ msgstr "Cancelled"
 #: src/editor/image-upload/index.ts
 msgid "Cannot upload: no document is open"
 msgstr "Cannot upload: no document is open"
+
+#: src/components/NewWorktreeDialog.tsx
+msgid "Check out remote branch"
+msgstr "Check out remote branch"
+
+#: src/components/NewWorktreeDialog.tsx
+msgid "Check out worktree"
+msgstr "Check out worktree"
 
 #: src/components/PropertyWidgets.tsx
 msgid "Checkbox"
@@ -1682,6 +1728,10 @@ msgstr "Couldn't create skill: {0}"
 msgid "Couldn't create template: {error}"
 msgstr "Couldn't create template: {error}"
 
+#: src/components/NewWorktreeDialog.tsx
+msgid "Couldn't create the worktree. Try a different name."
+msgstr "Couldn't create the worktree. Try a different name."
+
 #: src/components/SkillDeleteDialog.tsx
 msgid "Couldn't delete skill: {error}"
 msgstr "Couldn't delete skill: {error}"
@@ -1746,6 +1796,10 @@ msgstr "Couldn't move skill: {0}"
 msgid "Couldn't move to Trash"
 msgstr "Couldn't move to Trash"
 
+#: src/components/RecentProjectsMenu.tsx
+msgid "Couldn't open a worktree for that branch."
+msgstr "Couldn't open a worktree for that branch."
+
 #: src/components/DocumentErrorBoundary.tsx
 msgid "Couldn't open document"
 msgstr "Couldn't open document"
@@ -1753,6 +1807,10 @@ msgstr "Couldn't open document"
 #: src/components/BottomComposer.tsx
 msgid "Couldn't open the terminal — please try again."
 msgstr "Couldn't open the terminal — please try again."
+
+#: src/components/NewWorktreeDialog.tsx
+msgid "Couldn't open the worktree. Try again."
+msgstr "Couldn't open the worktree. Try again."
 
 #: src/components/ConnectingBanner.tsx
 msgid "Couldn't reach collab server — {errorDetail}. Try <0>ok status</0> or check <1>.ok/local/last-spawn-error.log</1>."
@@ -1860,6 +1918,10 @@ msgstr "Create a file from the current document or folder context."
 msgid "Create a folder from the current document or folder context."
 msgstr "Create a folder from the current document or folder context."
 
+#: src/components/NewWorktreeDialog.tsx
+msgid "Create a new branch, or check out an existing one, in its own window."
+msgstr "Create a new branch, or check out an existing one, in its own window."
+
 #: src/lib/keyboard-shortcuts.ts
 msgid "Create a new list item from the current list item."
 msgstr "Create a new list item from the current list item."
@@ -1871,6 +1933,10 @@ msgstr "Create a new OpenKnowledge project in the folder of your choice."
 #: src/components/BottomComposer.tsx
 msgid "Create a new spec file for my user story"
 msgstr "Create a new spec file for my user story"
+
+#: src/components/RecentProjectsMenu.tsx
+msgid "Create a worktree from this branch"
+msgstr "Create a worktree from this branch"
 
 #: src/components/NewItemDialog.tsx
 msgid "Create in <0>{dirDisplay}</0>"
@@ -1913,6 +1979,19 @@ msgstr "Create with {0}"
 msgid "Create with {0} CLI"
 msgstr "Create with {0} CLI"
 
+#: src/components/RecentProjectsMenu.tsx
+msgid "create worktree"
+msgstr "create worktree"
+
+#: src/components/CommandPalette.tsx
+#: src/components/NewWorktreeDialog.tsx
+msgid "Create worktree"
+msgstr "Create worktree"
+
+#: src/components/RecentProjectsMenu.tsx
+msgid "Create worktree <0>“<1>{typedName}</1>”</0>"
+msgstr "Create worktree <0>“<1>{typedName}</1>”</0>"
+
 #: src/components/FileTree.tsx
 #: src/components/OnboardingCard.tsx
 msgid "Create your first file"
@@ -1954,6 +2033,14 @@ msgstr "Creating page: {linkTitle}."
 msgid "Creating..."
 msgstr "Creating..."
 
+#: src/components/RecentProjectsMenu.tsx
+msgid "Current"
+msgstr "Current"
+
+#: src/components/NewWorktreeDialog.tsx
+msgid "Current commit"
+msgstr "Current commit"
+
 #: src/editor/extensions/WikiLinkPropPanel.tsx
 msgid "Custom display text"
 msgstr "Custom display text"
@@ -1969,6 +2056,10 @@ msgstr "Customize how the editor looks and behaves."
 #: src/components/PropertyWidgets.tsx
 msgid "Date"
 msgstr "Date"
+
+#: src/components/RecentProjectsMenu.tsx
+msgid "default"
+msgstr "default"
 
 #: src/components/settings/SettingsDialogBody.tsx
 msgid "Default location for new attachments"
@@ -2464,9 +2555,17 @@ msgstr "Enter a repository URL or owner/repo"
 msgid "Enter a title for this template."
 msgstr "Enter a title for this template."
 
+#: src/components/NewWorktreeDialog.tsx
+msgid "Enter a valid branch name (no spaces, no leading dot, no \"..\")."
+msgstr "Enter a valid branch name (no spaces, no leading dot, no \"..\")."
+
 #: src/components/ShareReceiveDialog.tsx
 msgid "Error:"
 msgstr "Error:"
+
+#: src/components/NewWorktreeDialog.tsx
+msgid "Existing branch <0>{trimmed}</0> will be checked out into its own window, under <1>.ok/worktrees/</1>."
+msgstr "Existing branch <0>{trimmed}</0> will be checked out into its own window, under <1>.ok/worktrees/</1>."
 
 #: src/components/DiffView.tsx
 msgid "Exit merge"
@@ -2679,9 +2778,17 @@ msgstr "Failed to open Project Navigator."
 
 #: src/components/CommandPalette.tsx
 #: src/components/NavigatorApp.tsx
-#: src/components/ProjectSwitcher.tsx
 msgid "Failed to open project."
 msgstr "Failed to open project."
+
+#: src/components/CommandPalette.tsx
+#: src/components/RecentProjectsMenu.tsx
+msgid "Failed to open worktree."
+msgstr "Failed to open worktree."
+
+#: src/components/RecentProjectsMenu.tsx
+msgid "Failed to open."
+msgstr "Failed to open."
 
 #: src/components/LinksPanel.tsx
 msgid "Failed to parse backlinks error response (HTTP {status})"
@@ -3130,6 +3237,10 @@ msgstr "Hide this file"
 #: src/editor/components/Pdf.tsx
 msgid "Hide thumbnails"
 msgstr "Hide thumbnails"
+
+#: src/components/RecentProjectsMenu.tsx
+msgid "Hide worktrees"
+msgstr "Hide worktrees"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Highlight"
@@ -3820,6 +3931,10 @@ msgstr "moved template"
 msgid "Multi-page PDF viewer with toolbar controls (thumbnails, page nav, zoom)."
 msgstr "Multi-page PDF viewer with toolbar controls (thumbnails, page nav, zoom)."
 
+#: src/components/NewWorktreeDialog.tsx
+msgid "my-feature"
+msgstr "my-feature"
+
 #: src/components/SubscribeForm.tsx
 msgid "my@email.com"
 msgstr "my@email.com"
@@ -3907,6 +4022,14 @@ msgstr "New"
 msgid "New {0} chat"
 msgstr "New {0} chat"
 
+#: src/components/NewWorktreeDialog.tsx
+msgid "New branch <0>{trimmed}</0> will be created from <1>{currentBaseLabel}</1>, in its own worktree under <2>.ok/worktrees/</2>."
+msgstr "New branch <0>{trimmed}</0> will be created from <1>{currentBaseLabel}</1>, in its own worktree under <2>.ok/worktrees/</2>."
+
+#: src/components/NewWorktreeDialog.tsx
+msgid "New branch <0>{trimmed}</0> will be created from the current commit, in its own worktree under <1>.ok/worktrees/</1>."
+msgstr "New branch <0>{trimmed}</0> will be created from the current commit, in its own worktree under <1>.ok/worktrees/</1>."
+
 #: src/components/TerminalNewChatButton.tsx
 msgid "New chat"
 msgstr "New chat"
@@ -3972,6 +4095,11 @@ msgstr "New template"
 #: src/components/TerminalNewChatButton.tsx
 msgid "New terminal"
 msgstr "New terminal"
+
+#: src/components/NewWorktreeDialog.tsx
+#: src/components/ProjectSwitcher.tsx
+msgid "New worktree"
+msgstr "New worktree"
 
 #: src/editor/find-replace/FindReplaceBar.tsx
 msgid "Next match"
@@ -4088,6 +4216,10 @@ msgstr "No location selected. Use Browse to choose a folder."
 msgid "No matches. Some files are excluded from search (hidden or ignored files)."
 msgstr "No matches. Some files are excluded from search (hidden or ignored files)."
 
+#: src/components/NewWorktreeDialog.tsx
+msgid "No matching branches."
+msgstr "No matching branches."
+
 #: src/components/CommandPalette.tsx
 msgid "No matching commands."
 msgstr "No matching commands."
@@ -4100,7 +4232,7 @@ msgstr "No matching docs"
 msgid "No matching paths"
 msgstr "No matching paths"
 
-#: src/components/ProjectSwitcher.tsx
+#: src/components/RecentProjectsMenu.tsx
 msgid "No matching projects."
 msgstr "No matching projects."
 
@@ -4108,9 +4240,9 @@ msgstr "No matching projects."
 msgid "No matching repositories."
 msgstr "No matching repositories."
 
-#: src/components/ProjectSwitcher.tsx
-msgid "No other recent projects."
-msgstr "No other recent projects."
+#: src/components/RecentProjectsMenu.tsx
+msgid "No matching worktrees or branches."
+msgstr "No matching worktrees or branches."
 
 #: src/components/GraphPanel.tsx
 msgid "No Outgoing"
@@ -4151,6 +4283,10 @@ msgstr "No project skills yet. Author one to teach agents a repeatable task scop
 #: src/components/settings/ProjectTemplatesSection.tsx
 msgid "No project templates yet. Create one to make it available everywhere in this project. Folder-scoped templates live on each folder's overview page."
 msgstr "No project templates yet. Create one to make it available everywhere in this project. Folder-scoped templates live on each folder's overview page."
+
+#: src/components/ProjectSwitcher.tsx
+msgid "No recent projects."
+msgstr "No recent projects."
 
 #: src/components/CloneDialog.tsx
 msgid "No repositories found on your GitHub account."
@@ -4528,6 +4664,10 @@ msgstr "Open with AI {targetDisplayName}"
 #: src/components/handoff/OpenInAgentMenuItem.tsx
 msgid "Open with AI {targetDisplayName}, {hint}"
 msgstr "Open with AI {targetDisplayName}, {hint}"
+
+#: src/components/NewWorktreeDialog.tsx
+msgid "Open worktree"
+msgstr "Open worktree"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Open, navigate, accept, or dismiss CodeMirror completion suggestions."
@@ -5044,6 +5184,14 @@ msgstr "Release notes"
 msgid "Reload"
 msgstr "Reload"
 
+#: src/components/NewWorktreeDialog.tsx
+msgid "remote"
+msgstr "remote"
+
+#: src/components/NewWorktreeDialog.tsx
+msgid "Remote branch <0>{remoteCheckoutRef}</0> will be checked out as a new local tracking branch <1>{trimmed}</1>, in its own window under <2>.ok/worktrees/</2>."
+msgstr "Remote branch <0>{remoteCheckoutRef}</0> will be checked out as a new local tracking branch <1>{trimmed}</1>, in its own window under <2>.ok/worktrees/</2>."
+
 #: src/editor/extensions/InternalLinkPropPanel.tsx
 #: src/editor/extensions/WikiLinkPropPanel.tsx
 msgid "Remove"
@@ -5430,6 +5578,14 @@ msgstr "Search \"{semanticSubmitQuery}\" by meaning"
 msgid "Search ({searchShortcut})"
 msgstr "Search ({searchShortcut})"
 
+#: src/components/NewWorktreeDialog.tsx
+msgid "Search branches"
+msgstr "Search branches"
+
+#: src/components/NewWorktreeDialog.tsx
+msgid "Search branches..."
+msgstr "Search branches..."
+
 #: src/components/CommandPalette.tsx
 msgid "Search by meaning"
 msgstr "Search by meaning"
@@ -5459,12 +5615,12 @@ msgid "Search matches file names, paths, and folders. Open a file to search its 
 msgstr "Search matches file names, paths, and folders. Open a file to search its body (⌘F)."
 
 #: src/components/ProjectSwitcher.tsx
-msgid "Search recent projects"
-msgstr "Search recent projects"
+msgid "Search projects"
+msgstr "Search projects"
 
 #: src/components/ProjectSwitcher.tsx
-msgid "Search recent projects..."
-msgstr "Search recent projects..."
+msgid "Search projects..."
+msgstr "Search projects..."
 
 #: src/components/settings/SearchSection.tsx
 msgid "Search settings not yet loaded — try again in a moment"
@@ -5473,6 +5629,14 @@ msgstr "Search settings not yet loaded — try again in a moment"
 #: src/components/NewItemDialog.tsx
 msgid "Search templates"
 msgstr "Search templates"
+
+#: src/components/RecentProjectsMenu.tsx
+msgid "Search worktrees"
+msgstr "Search worktrees"
+
+#: src/components/RecentProjectsMenu.tsx
+msgid "Search worktrees and branches"
+msgstr "Search worktrees and branches"
 
 #: src/components/CommandPalette.tsx
 msgid "Searching"
@@ -5777,6 +5941,10 @@ msgstr "Show terminal"
 #: src/editor/components/Pdf.tsx
 msgid "Show thumbnails"
 msgstr "Show thumbnails"
+
+#: src/components/RecentProjectsMenu.tsx
+msgid "Show worktrees"
+msgstr "Show worktrees"
 
 #: src/components/CommandPalette.tsx
 msgid "Showing results for \"{semanticResultsLabel}\""
@@ -6247,6 +6415,10 @@ msgstr "Text"
 msgid "Thanks for subscribing. Watch your inbox for product updates."
 msgstr "Thanks for subscribing. Watch your inbox for product updates."
 
+#: src/components/NewWorktreeDialog.tsx
+msgid "That branch is already open in another worktree."
+msgstr "That branch is already open in another worktree."
+
 #: src/components/ShareReceiveDialog.tsx
 msgid "That folder isn't an OpenKnowledge project yet. Initialize it and open?"
 msgstr "That folder isn't an OpenKnowledge project yet. Initialize it and open?"
@@ -6442,6 +6614,10 @@ msgstr "This project is running a different, incompatible build of OpenKnowledge
 #: src/lib/install-server-drift-listener.ts
 msgid "This project is running an older version of OpenKnowledge (v{0}) than this app (v{1})."
 msgstr "This project is running an older version of OpenKnowledge (v{0}) than this app (v{1})."
+
+#: src/components/NewWorktreeDialog.tsx
+msgid "This project isn't a git repository, so worktrees aren't available."
+msgstr "This project isn't a git repository, so worktrees aren't available."
 
 #: src/components/settings/SettingsDialogBody.tsx
 msgid "This project lives only on this computer. Connect it to GitHub to back it up and share it with other people."
@@ -7023,6 +7199,7 @@ msgid "Word wrap"
 msgstr "Word wrap"
 
 #: src/components/McpConsentDialogBody.tsx
+#: src/components/NewWorktreeDialog.tsx
 #: src/components/SkillEditorActions.tsx
 msgid "Working"
 msgstr "Working"
@@ -7034,6 +7211,19 @@ msgstr "Workspace"
 #: src/components/CommandPalette.tsx
 msgid "Workspace Command Palette"
 msgstr "Workspace Command Palette"
+
+#. placeholder {0}: basenameOf(project.mainRoot ?? '')
+#: src/components/NavigatorApp.tsx
+msgid "worktree of {0}"
+msgstr "worktree of {0}"
+
+#: src/components/CommandPalette.tsx
+msgid "worktree of {worktreeOf}"
+msgstr "worktree of {worktreeOf}"
+
+#: src/components/CommandPalette.tsx
+msgid "Worktrees"
+msgstr "Worktrees"
 
 #: src/components/settings/SettingsDialogBody.tsx
 msgid "Wrap long lines in the markdown source editor."

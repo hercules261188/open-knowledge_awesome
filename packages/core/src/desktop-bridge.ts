@@ -1,6 +1,11 @@
 import type { CreateNewBannerKind } from './constants/create-new-banner.ts';
 import type { EditorId } from './constants/editors.ts';
 import type { OkFolderState } from './constants/folder-state.ts';
+import type {
+  WorktreeCreateRequest,
+  WorktreeCreateResult,
+  WorktreeListResult,
+} from './git/worktree-selector-model.ts';
 import type { TerminalCli } from './handoff/terminal-launch.ts';
 import type { LocalOpOkInitResponse } from './schemas/api/local-op.ts';
 import type { BranchInfoResponse, CheckoutResponse } from './schemas/api/share.ts';
@@ -42,7 +47,9 @@ type OkMenuAction =
   | 'toggle-doc-panel'
   | 'toggle-terminal'
   | 'new-terminal'
-  | 'kill-terminal';
+  | 'kill-terminal'
+  | 'new-worktree'
+  | 'switch-worktree';
 
 type OkUnsubscribe = () => void;
 
@@ -61,7 +68,8 @@ type OkProjectEntryPoint =
   | 'recents'
   | 'deep-link'
   | 'drag-drop'
-  | 'share-receive';
+  | 'share-receive'
+  | 'worktree';
 
 interface OkProjectOpenRequest {
   path: string;
@@ -599,6 +607,11 @@ export interface OkDesktopBridge {
     }): Promise<{ ok: true } | { ok: false; reason: 'timeout' | 'project-not-open' }>;
     okInit(request: { projectPath: string }): Promise<LocalOpOkInitResponse>;
     close(): Promise<void>;
+  };
+
+  worktree: {
+    list(): Promise<WorktreeListResult>;
+    create(request: WorktreeCreateRequest): Promise<WorktreeCreateResult>;
   };
 
   sharing: {

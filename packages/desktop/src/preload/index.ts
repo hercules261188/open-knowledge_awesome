@@ -1,3 +1,8 @@
+import type {
+  WorktreeCreateRequest,
+  WorktreeCreateResult,
+  WorktreeListResult,
+} from '@inkeep/open-knowledge-core';
 import { contextBridge, type IpcRendererEvent, ipcRenderer, webUtils } from 'electron';
 import type {
   OkDesktopBridge,
@@ -331,6 +336,15 @@ const bridge: OkDesktopBridge = {
     awaitBranchSwitched: (request) => invoke('ok:project:await-branch-switched', request),
     okInit: (request) => invoke('ok:project:ok-init', request),
     close: () => invoke('ok:project:close'),
+  },
+
+  worktree: {
+    list: () => invoke('ok:worktree:dispatch', { kind: 'list' }) as Promise<WorktreeListResult>,
+    create: (request: WorktreeCreateRequest) =>
+      invoke('ok:worktree:dispatch', {
+        kind: 'create',
+        ...request,
+      }) as Promise<WorktreeCreateResult>,
   },
 
   sharing: {

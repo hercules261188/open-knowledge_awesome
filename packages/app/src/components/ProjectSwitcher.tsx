@@ -12,10 +12,13 @@ import {
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { SidebarMenuButton } from '@/components/ui/sidebar';
 import { useCurrentBranch } from '@/hooks/use-current-branch';
+import { useWorktrees } from '@/hooks/use-worktrees';
 import type { OkDesktopBridge, RecentProjectEntry } from '@/lib/desktop-bridge-types';
 import { runWithToast as runWithToastBase } from '@/lib/error-state';
 import { cn } from '@/lib/utils';
 import { CreateProjectDialog } from './CreateProjectDialog';
+import { NewWorktreeDialog } from './NewWorktreeDialog';
+import { RecentProjectsMenu } from './RecentProjectsMenu';
 
 export const runWithToast = (
   fn: () => Promise<void>,
@@ -23,24 +26,48 @@ export const runWithToast = (
   toastApi?: { error(msg: string): void },
 ): Promise<void> => runWithToastBase(fn, fallback, toastApi, 'ProjectSwitcher');
 
+const SELECT_GUARD_MS = 350;
+
 interface ProjectSwitcherProps {
   bridge: OkDesktopBridge;
 }
 
 export function ProjectSwitcher({ bridge }: ProjectSwitcherProps) {
   const { t } = useLingui();
-  const [recents, setRecents] = useState<RecentProjectEntry[]>([]);
+  const [recents, setRecents] = useState<RecentProjectEntry[] | null>(null);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [createProjectOpen, setCreateProjectOpen] = useState(false);
+  const [newWorktreeOpen, setNewWorktreeOpen] = useState(false);
+  const [newWorktreeInitialName, setNewWorktreeInitialName] = useState('');
+  const [flyoutPath, setFlyoutPath] = useState<string | null>(null);
   const branch = useCurrentBranch();
+  const worktreeModel = useWorktrees();
 
   const isElectronHost = typeof window !== 'undefined' && window.okDesktop != null;
   const sawPointerDownRef = useRef(false);
+  const withinOpenGuardRef = useRef(false);
+  const openGuardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleOpenChange = (next: boolean): void => {
+    if (next) {
+      withinOpenGuardRef.current = true;
+      if (openGuardTimerRef.current !== null) clearTimeout(openGuardTimerRef.current);
+      openGuardTimerRef.current = setTimeout(() => {
+        withinOpenGuardRef.current = false;
+      }, SELECT_GUARD_MS);
+    }
     setOpen(next);
-    if (!next) setSearch('');
+    if (!next) {
+      setSearch('');
+      setFlyoutPath(null);
+    }
+  };
+
+  const guardStaleSelect = (event: Event): boolean => {
+    if (!isElectronHost || !withinOpenGuardRef.current) return false;
+    event.preventDefault();
+    return true;
   };
 
   useEffect(() => {
@@ -55,16 +82,21 @@ export function ProjectSwitcher({ bridge }: ProjectSwitcherProps) {
     };
   }, [open, bridge, t]);
 
-  const openProject = (path: string) => {
-    setOpen(false);
-    void runWithToast(
-      () => bridge.project.open({ path, target: 'new-window', entryPoint: 'recents' }),
-      t`Failed to open project.`,
-    );
-  };
+  useEffect(() => {
+    return bridge.onMenuAction((action) => {
+      if (action === 'new-worktree') {
+        setOpen(false);
+        setFlyoutPath(null);
+        setNewWorktreeInitialName('');
+        setNewWorktreeOpen(true);
+      } else if (action === 'switch-worktree') {
+        setOpen(true);
+      }
+    });
+  }, [bridge]);
 
   const onOpenFolder = () => {
-    setOpen(false);
+    handleOpenChange(false);
     void runWithToast(async () => {
       const path = await bridge.dialog.openFolder();
       if (!path) return;
@@ -73,24 +105,29 @@ export function ProjectSwitcher({ bridge }: ProjectSwitcherProps) {
   };
 
   const onSwitchProject = () => {
-    setOpen(false);
+    handleOpenChange(false);
     void runWithToast(() => bridge.navigator.open(), t`Failed to open Project Navigator.`);
   };
 
   const onCreateProject = () => {
-    setOpen(false);
+    handleOpenChange(false);
     setCreateProjectOpen(true);
   };
 
-  const currentPath = bridge.config.projectPath;
-  const switchable = recents.filter((r) => r.path !== currentPath);
+  const openNewWorktreeWith = (name: string) => {
+    handleOpenChange(false);
+    setNewWorktreeInitialName(name);
+    setNewWorktreeOpen(true);
+  };
 
+  const currentPath = bridge.config.projectPath;
   const query = search.trim().toLowerCase();
-  const filtered = query
-    ? switchable.filter(
-        (r) => r.name.toLowerCase().includes(query) || r.path.toLowerCase().includes(query),
-      )
-    : switchable;
+  const isSearching = query !== '';
+  const loadedRecents = recents ?? [];
+  const menuRecents = isSearching
+    ? loadedRecents.filter((r) => !r.isLinkedWorktree)
+    : loadedRecents;
+  const menuWorktreeModel = isSearching ? null : worktreeModel;
 
   return (
     <>
@@ -154,9 +191,14 @@ export function ProjectSwitcher({ bridge }: ProjectSwitcherProps) {
           className="min-w-[260px]"
           data-testid="project-switcher-menu"
         >
-          {switchable.length === 0 ? (
+          {/* Three states, not two: while `recents` is null the first fetch is
+            still in flight — render nothing here (just the pinned footer actions
+            below) rather than the empty label, so first open doesn't flash "No
+            recent projects." before the list arrives. The label is only correct
+            once loaded (`recents !== null`) AND empty. */}
+          {recents === null ? null : recents.length === 0 ? (
             <DropdownMenuLabel className="font-normal text-muted-foreground text-xs">
-              <Trans>No other recent projects.</Trans>
+              <Trans>No recent projects.</Trans>
             </DropdownMenuLabel>
           ) : (
             <>
@@ -164,10 +206,13 @@ export function ProjectSwitcher({ bridge }: ProjectSwitcherProps) {
                 swallow keystrokes meant for the filter field. */}
               <InputGroup className="mb-1 h-8 border-0 shadow-none has-[[data-slot=input-group-control]:focus-visible]:ring-0">
                 <InputGroupInput
-                  aria-label={t`Search recent projects`}
-                  placeholder={t`Search recent projects...`}
+                  aria-label={t`Search projects`}
+                  placeholder={t`Search projects...`}
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    if (e.target.value !== '') setFlyoutPath(null);
+                    setSearch(e.target.value);
+                  }}
                   onKeyDown={(e) => e.stopPropagation()}
                   data-testid="project-switcher-search"
                 />
@@ -176,62 +221,110 @@ export function ProjectSwitcher({ bridge }: ProjectSwitcherProps) {
                 </InputGroupAddon>
               </InputGroup>
               <DropdownMenuSeparator />
-              {filtered.length === 0 ? (
-                <DropdownMenuLabel
-                  className="font-normal text-muted-foreground text-xs"
-                  role="status"
-                  aria-live="polite"
-                >
-                  <Trans>No matching projects.</Trans>
-                </DropdownMenuLabel>
-              ) : (
-                <div className="max-h-64 overflow-x-hidden overflow-y-auto overscroll-contain subtle-scrollbar scroll-fade-mask">
-                  {filtered.slice(0, 10).map((row) => (
-                    <DropdownMenuItem
-                      key={row.path}
-                      disabled={row.missing}
-                      onSelect={() => openProject(row.path)}
-                      className="flex w-full min-w-0 flex-col items-start gap-0.5"
-                      data-testid={`project-switcher-recent-${row.path}`}
-                    >
-                      <span className="w-full truncate font-medium text-sm" title={row.name}>
-                        {row.name}
-                      </span>
-                      <span
-                        className="w-full truncate text-muted-foreground text-xs"
-                        title={row.path}
-                      >
-                        {row.path}
-                        {row.missing ? t`  (missing)` : ''}
-                      </span>
-                    </DropdownMenuItem>
-                  ))}
-                </div>
-              )}
+              {/* Only the items list scrolls — the search field above and the
+                New / Switch / Open actions below stay pinned. Each group row's
+                worktree Popover flyout portals out of this wrapper, so the
+                scroll clip doesn't cut it off. overscroll-contain stops scroll
+                chaining to the page behind the dropdown at the list edges. */}
+              <div className="max-h-64 overflow-x-hidden overflow-y-auto overscroll-contain subtle-scrollbar scroll-fade-mask">
+                <RecentProjectsMenu
+                  bridge={bridge}
+                  recents={menuRecents}
+                  currentPath={currentPath}
+                  query={query}
+                  worktreeModel={menuWorktreeModel}
+                  closeMenu={() => handleOpenChange(false)}
+                  guardStaleSelect={guardStaleSelect}
+                  flyoutPath={flyoutPath}
+                  setFlyoutPath={setFlyoutPath}
+                  openNewWorktreeWith={openNewWorktreeWith}
+                />
+              </div>
             </>
           )}
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={onCreateProject} data-testid="project-switcher-new-project">
+          <DropdownMenuItem
+            onSelect={(e) => {
+              if (guardStaleSelect(e)) return;
+              onCreateProject();
+            }}
+            data-testid="project-switcher-new-project"
+          >
             <Plus aria-hidden="true" className="text-muted-foreground" />
             <Trans>New project</Trans>
           </DropdownMenuItem>
           <DropdownMenuItem
-            onSelect={onSwitchProject}
+            onSelect={(e) => {
+              if (guardStaleSelect(e)) return;
+              onSwitchProject();
+            }}
             data-testid="project-switcher-switch-project"
           >
             <LayoutGrid aria-hidden="true" className="text-muted-foreground" />
             <Trans>Switch project</Trans>
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={onOpenFolder} data-testid="project-switcher-open-folder">
+          <DropdownMenuItem
+            onSelect={(e) => {
+              if (guardStaleSelect(e)) return;
+              onOpenFolder();
+            }}
+            data-testid="project-switcher-open-folder"
+          >
             <FolderOpen aria-hidden="true" className="text-muted-foreground" />
             <Trans>Open folder</Trans>
           </DropdownMenuItem>
+          {/* "New worktree" sits at the bottom of the project-selection menu:
+            the per-project worktree flyouts are the primary worktree affordance
+            now, so the standalone create action is a secondary, last-position
+            entry. Gated on the current project being a git repo (a branch). */}
+          {branch !== null ? (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  if (guardStaleSelect(e)) return;
+                  handleOpenChange(false);
+                  setNewWorktreeInitialName('');
+                  setNewWorktreeOpen(true);
+                }}
+                data-testid="project-switcher-new-worktree"
+              >
+                <GitBranch aria-hidden="true" className="text-muted-foreground" />
+                <Trans>New worktree</Trans>
+              </DropdownMenuItem>
+            </>
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
       <CreateProjectDialog
         open={createProjectOpen}
         onOpenChange={setCreateProjectOpen}
         bridge={bridge}
+      />
+      <NewWorktreeDialog
+        open={newWorktreeOpen}
+        onOpenChange={setNewWorktreeOpen}
+        bridge={bridge}
+        currentBranch={branch}
+        initialBranchName={newWorktreeInitialName}
+        branches={worktreeModel?.entries
+          .map((entry) => entry.branch)
+          .filter((b): b is string => b !== null)}
+        existingWorktreeBranches={
+          new Set(
+            worktreeModel?.entries
+              .filter((entry) => entry.branch !== null && entry.worktreePath !== null)
+              .map((entry) => entry.branch as string),
+          )
+        }
+        remoteBranches={worktreeModel?.remoteBranches}
+        behindByBranch={
+          new Map(
+            worktreeModel?.entries
+              .filter((entry) => entry.branch !== null && entry.behind !== undefined)
+              .map((entry) => [entry.branch as string, entry.behind as number]),
+          )
+        }
       />
     </>
   );

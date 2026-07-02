@@ -366,10 +366,22 @@ export {
   serializeFrontmatterMap,
   withFences,
 } from './frontmatter/yaml-codec.ts';
+export { parseBranchList } from './git/branch-list-parser.ts';
 export {
   type BridgeWorktreeEntry,
   parseWorktreeListPorcelain,
 } from './git/worktree-list-parser.ts';
+export { WORKTREES_PARENT_DIR, worktreeRelativeDir } from './git/worktree-path.ts';
+export {
+  type BuildWorktreeSelectorModelInput,
+  buildWorktreeSelectorModel,
+  stripRemotePrefix,
+  type WorktreeCreateRequest,
+  type WorktreeCreateResult,
+  type WorktreeListResult,
+  type WorktreeSelectorEntry,
+  type WorktreeSelectorModel,
+} from './git/worktree-selector-model.ts';
 export {
   type AssembleHandoffPromptInput,
   assembleHandoffPrompt,

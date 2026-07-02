@@ -145,6 +145,12 @@ const OK_GITIGNORE_CONTENT = `# .ok/local/ holds per-machine runtime state. Anyt
 # manifests, telemetry, error logs) are auto-ignored — no edit needed here.
 ${LOCAL_DIR}/
 
+# .ok/worktrees/ holds git worktrees created from the desktop worktree
+# selector — per-machine checkouts, never committed (WORKTREES_PARENT_DIR in
+# @inkeep/open-knowledge-core). Worktree creation also appends this path to
+# .git/info/exclude so projects whose committed rule predates it stay clean.
+worktrees/
+
 # Per-machine runtime state at the .ok/ root. Contains PII (principal email,
 # UUID), hostnames, and absolute filesystem paths — never commit. The only
 # file at .ok/ root that SHOULD be committed is \`config.yml\` (project

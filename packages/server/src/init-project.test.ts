@@ -74,6 +74,7 @@ describe('initContent', () => {
 
     const gitignore = readFileSync(join(okDir, '.gitignore'), 'utf-8');
     expect(gitignore).toContain('local/');
+    expect(gitignore).toContain('worktrees/');
 
     const configYml = readFileSync(join(okDir, 'config.yml'), 'utf-8');
     expect(configYml).toContain('OpenKnowledge — project configuration');
@@ -126,7 +127,7 @@ describe('initContent', () => {
 
     const after = readFileSync(join(okDir, '.gitignore'), 'utf-8');
     expect(after).toBe(
-      `cache/\nserver.lock\nui.lock\nsync-state.json\nlocal/\nprincipal.json\nstate.json\nlast-spawn-error.log\n`,
+      `cache/\nserver.lock\nui.lock\nsync-state.json\nlocal/\nworktrees/\nprincipal.json\nstate.json\nlast-spawn-error.log\n`,
     );
     expect(result.updated).toContain('.gitignore');
     expect(result.created).not.toContain('.gitignore');

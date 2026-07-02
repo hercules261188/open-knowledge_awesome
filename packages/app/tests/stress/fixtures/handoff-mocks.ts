@@ -269,6 +269,10 @@ export async function installHandoffMocks(page: Page, cfg: HandoffMockConfig): P
           }),
           close: async () => {},
         },
+        worktree: {
+          list: async () => ({ ok: false as const, reason: 'no-git' as const }),
+          create: async () => ({ ok: false as const, reason: 'no-git' as const }),
+        },
         sharing: {
           status: async () =>
             ({

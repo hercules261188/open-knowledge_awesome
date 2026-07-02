@@ -1,14 +1,15 @@
 // biome-ignore-all lint/plugin/no-raw-html-interactive-element: pre-rule backlog — file uses raw <button>/<input>/<textarea> awaiting shadcn migration; tracked at https://github.com/inkeep/open-knowledge/blob/main/biome-plugins/README.md#no-raw-html-interactive-elementgrit
 
-import { SHOW_INSTALL_SKILL } from '@inkeep/open-knowledge-core';
+import { SHOW_INSTALL_SKILL, type WorktreeSelectorEntry } from '@inkeep/open-knowledge-core';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import {
-  Box,
   Download,
   FilePlus2,
   FileText,
+  Folder,
   FolderOpen,
   FolderPlus,
+  GitBranch,
   Hash,
   LayoutGrid,
   Loader2,
@@ -75,6 +76,7 @@ import { useDocumentContext } from '@/editor/DocumentContext';
 import type { TagSummaryEntry } from '@/editor/extensions/tag-suggestion';
 import { useIsEmbedded } from '@/hooks/use-is-embedded';
 import { useSemanticSearchStatus } from '@/hooks/use-semantic-search-status';
+import { useWorktrees } from '@/hooks/use-worktrees';
 import type { OkDesktopBridge, RecentProjectEntry } from '@/lib/desktop-bridge-types';
 import { hashFromDocName } from '@/lib/doc-hash';
 import { runWithToast as runWithToastBase } from '@/lib/error-state';
@@ -84,8 +86,10 @@ import { useSingleFileMode } from '@/lib/single-file-mode';
 import { SETTINGS_OPEN_HASH } from '@/lib/use-settings-route';
 import { useWorkspace } from '@/lib/use-workspace';
 import { cn } from '@/lib/utils.ts';
+import { refreshWorktrees } from '@/lib/worktree-store';
 import { buildHandoffInput, useHandoffDispatch } from './handoff/useHandoffDispatch';
 import { useInstalledAgents } from './handoff/useInstalledAgents';
+import { basenameOf } from './project-switcher-recents';
 
 const COMMAND_PALETTE_SEARCH_TIMEOUT_MS = 3000;
 const COMMAND_PALETTE_SEARCH_WARMING_POLL_MS = 600;
@@ -310,6 +314,11 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
   const visibleRecents = filterOmnibarRecents(recentNavigation, validRecentKeys);
   const currentPath = bridge?.config.projectPath ?? null;
   const switchableProjects = bridge ? projectRecents.filter((row) => row.path !== currentPath) : [];
+  const worktreeModel = useWorktrees();
+  const switchableWorktrees =
+    bridge && worktreeModel
+      ? worktreeModel.entries.filter((entry) => entry.branch !== null && !entry.isCurrent)
+      : [];
   const initialCreateDir = resolveCreateInitialDir(activeTarget, activeDocName);
   const fallbackSearchResults =
     trimmedDeferredQuery === ''
@@ -521,6 +530,31 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
     }, fallback);
   };
 
+  const openWorktreeEntry = (entry: WorktreeSelectorEntry) => {
+    if (!bridge) return;
+    const existingPath = entry.worktreePath;
+    if (existingPath !== null) {
+      runAction(
+        () =>
+          bridge.project.open({ path: existingPath, target: 'new-window', entryPoint: 'worktree' }),
+        t`Failed to open worktree.`,
+      );
+      return;
+    }
+    const branch = entry.branch;
+    if (branch === null) return;
+    runAction(async () => {
+      const result = await bridge.worktree.create({ branch, createBranch: false });
+      if (!result.ok) throw new Error(result.reason);
+      refreshWorktrees();
+      await bridge.project.open({
+        path: result.path,
+        target: 'new-window',
+        entryPoint: 'worktree',
+      });
+    }, t`Failed to open worktree.`);
+  };
+
   function rememberNavigation(entry: WorkspaceEntry | OmnibarRecentEntry) {
     const nextEntry = {
       kind: entry.kind,
@@ -604,6 +638,12 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
       switchableProjects.some((row) =>
         matchesCommandQuery(`${row.name} ${row.path}`, deferredQuery, ['open recent project']),
       ));
+  const matchedWorktrees = switchableWorktrees.filter(
+    (entry) =>
+      trimmedDeferredQuery === '' ||
+      matchesCommandQuery(entry.branch ?? '', deferredQuery, ['worktree branch']),
+  );
+  const showWorktrees = !inExclusiveMode && bridge !== null && matchedWorktrees.length > 0;
   const isEmbedded = useIsEmbedded();
   const showAgentGroup =
     !inExclusiveMode &&
@@ -1259,40 +1299,73 @@ export function CommandPalette({ bridge = null, open, onOpenChange }: CommandPal
                   ]),
                 )
                 .slice(0, 10)
-                .map((row) => (
-                  <CommandItem
-                    key={row.path}
-                    value={`${row.name} ${row.path} recent project`}
-                    disabled={row.missing}
-                    onSelect={() =>
-                      runAction(
-                        () =>
-                          bridge.project.open({
-                            path: row.path,
-                            target: 'new-window',
-                            entryPoint: 'recents',
-                          }),
-                        t`Failed to open project.`,
-                      )
-                    }
-                    data-testid={`command-palette-recent-${row.path}`}
-                    className="items-start"
-                  >
-                    <Box className="mt-0.5" />
-                    <div className="flex min-w-0 flex-col gap-1">
-                      <span className="truncate font-medium">{row.name}</span>
-                      <span className="truncate text-muted-foreground text-xs">
-                        {row.path}
-                        {row.missing ? (
-                          <>
-                            {'  '}
-                            <Trans>(missing)</Trans>
-                          </>
+                .map((row) => {
+                  const isWorktree = row.isLinkedWorktree === true;
+                  const RowIcon = isWorktree ? GitBranch : Folder;
+                  const worktreeOf =
+                    isWorktree && row.mainRoot !== undefined ? basenameOf(row.mainRoot) : null;
+                  return (
+                    <CommandItem
+                      key={row.path}
+                      value={`${row.name} ${row.path} recent project`}
+                      disabled={row.missing}
+                      onSelect={() =>
+                        runAction(
+                          () =>
+                            bridge.project.open({
+                              path: row.path,
+                              target: 'new-window',
+                              entryPoint: 'recents',
+                            }),
+                          t`Failed to open project.`,
+                        )
+                      }
+                      data-testid={`command-palette-recent-${row.path}`}
+                      className="items-start"
+                    >
+                      <RowIcon className="mt-0.5" />
+                      <div className="flex min-w-0 flex-col gap-1">
+                        <span className="truncate font-medium">{row.name}</span>
+                        {worktreeOf !== null ? (
+                          <span className="truncate text-muted-foreground text-xs">
+                            <Trans>worktree of {worktreeOf}</Trans>
+                          </span>
                         ) : null}
-                      </span>
-                    </div>
-                  </CommandItem>
-                ))}
+                        <span className="truncate text-muted-foreground text-xs">
+                          {row.path}
+                          {row.missing ? (
+                            <>
+                              {'  '}
+                              <Trans>(missing)</Trans>
+                            </>
+                          ) : null}
+                        </span>
+                      </div>
+                    </CommandItem>
+                  );
+                })}
+            </CommandGroup>
+          ) : null}
+
+          {showWorktrees && bridge ? (
+            <CommandGroup heading={t`Worktrees`}>
+              {matchedWorktrees.slice(0, 10).map((entry) => (
+                <CommandItem
+                  key={entry.branch}
+                  value={`${entry.branch} worktree branch`}
+                  onSelect={() => openWorktreeEntry(entry)}
+                  data-testid={`command-palette-worktree-${entry.branch}`}
+                  className="items-start"
+                >
+                  <GitBranch className="mt-0.5" />
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <span className="truncate font-medium">{entry.branch}</span>
+                    <span className="truncate text-muted-foreground text-xs">
+                      {entry.worktreePath ?? t`Create worktree`}
+                    </span>
+                  </div>
+                </CommandItem>
+              ))}
             </CommandGroup>
           ) : null}
 

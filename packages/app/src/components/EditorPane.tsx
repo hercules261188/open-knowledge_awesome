@@ -8,6 +8,7 @@ import { type EditorModeValue, useEditorMode } from '@/editor/use-editor-mode';
 import { useGitSyncStatus } from '@/hooks/use-git-sync-status';
 import { useInstalledClis } from '@/hooks/use-installed-clis';
 import { useNoPushPermissionToast } from '@/hooks/use-no-push-permission-toast';
+import { useWorktreeAutoSyncNotice } from '@/hooks/use-worktree-autosync-notice';
 import { useConfigContext } from '@/lib/config-provider';
 import { resolveDefaultCli } from '@/lib/default-cli-resolver';
 import { matchesKeyboardShortcut } from '@/lib/keyboard-shortcuts';
@@ -191,6 +192,8 @@ export function EditorPane({ onOpenSearch }: EditorPaneProps = {}) {
   }, [terminalVisible]);
 
   useNoPushPermissionToast(syncStatus?.pausedReason);
+
+  useWorktreeAutoSyncNotice();
 
   function handleModeChange(mode: EditorModeValue) {
     setEditorMode(mode);

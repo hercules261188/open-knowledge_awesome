@@ -69,6 +69,63 @@ mock.module('./CreateProjectDialog', () => ({
   },
 }));
 
+let newWorktreeProps: Array<{
+  open: boolean;
+  branches?: readonly string[];
+  existingWorktreeBranches?: ReadonlySet<string>;
+  remoteBranches?: readonly string[];
+  behindByBranch?: ReadonlyMap<string, number>;
+  initialBranchName?: string;
+}> = [];
+mock.module('./NewWorktreeDialog', () => ({
+  NewWorktreeDialog: (props: {
+    open: boolean;
+    branches?: readonly string[];
+    existingWorktreeBranches?: ReadonlySet<string>;
+    remoteBranches?: readonly string[];
+    behindByBranch?: ReadonlyMap<string, number>;
+    initialBranchName?: string;
+  }) => {
+    newWorktreeProps.push(props);
+    return (
+      <div
+        data-testid="new-worktree-dialog"
+        data-open={String(props.open)}
+        data-initial-name={props.initialBranchName ?? ''}
+      />
+    );
+  },
+}));
+
+mock.module('@/hooks/use-current-branch', () => ({
+  useCurrentBranch: () => 'main',
+}));
+mock.module('@/hooks/use-worktrees', () => ({
+  useWorktrees: () => ({
+    mainRoot: '/projects/current',
+    currentBranch: 'main',
+    entries: [
+      {
+        branch: 'omega-branch',
+        worktreePath: null,
+        isCurrent: false,
+        isMain: false,
+        locked: false,
+        behind: 4,
+      },
+      {
+        branch: 'has-worktree',
+        worktreePath: '/projects/current/.ok/worktrees/has-worktree',
+        isCurrent: false,
+        isMain: false,
+        locked: false,
+        behind: 0,
+      },
+    ],
+    remoteBranches: ['origin/main', 'origin/omega-branch', 'origin/remote-only-x'],
+  }),
+}));
+
 function recent(name: string, path = `/projects/${name.toLowerCase()}`) {
   return { name, path: path.replaceAll(' ', '-') };
 }
@@ -85,6 +142,13 @@ function createBridge() {
           recent('Current', '/projects/current'),
           ...Array.from({ length: 10 }, (_, index) => recent(`Project ${index + 1}`)),
           recent('Omega', '/archive/omega-project'),
+          {
+            name: 'omega-wt',
+            path: '/archive/omega-wt',
+            branch: 'omega-branch',
+            isLinkedWorktree: true,
+            mainRoot: '/archive/omega-project',
+          },
         ]),
       ),
       open: mock(() => Promise.resolve()),
@@ -95,8 +159,20 @@ function createBridge() {
     navigator: {
       open: mock(() => Promise.resolve()),
     },
+    worktree: {
+      list: mock(() => Promise.resolve({ ok: false as const, reason: 'no-git' as const })),
+      create: mock(() => Promise.resolve({ ok: false as const, reason: 'no-git' as const })),
+    },
+    onMenuAction: mock((cb: (action: string) => void) => {
+      menuActionCb = cb;
+      return () => {
+        menuActionCb = null;
+      };
+    }),
   };
 }
+
+let menuActionCb: ((action: string) => void) | null = null;
 
 async function openMenu() {
   fireEvent.click(screen.getByTestId('project-switcher-trigger'));
@@ -114,6 +190,9 @@ describe('ProjectSwitcher dropdown behavior', () => {
     lastDropdownOpenChange = null;
     keydownBubbleCount = 0;
     createDialogProps = [];
+    newWorktreeProps = [];
+    menuActionCb = null;
+    (window as unknown as { okDesktop?: unknown }).okDesktop = undefined;
   });
 
   test('renders footer actions in order and routes each action through the expected bridge entry point', async () => {
@@ -128,9 +207,11 @@ describe('ProjectSwitcher dropdown behavior', () => {
     const newProjectIndex = menuText.indexOf('New project');
     const switchProjectIndex = menuText.indexOf('Switch project');
     const openFolderIndex = menuText.indexOf('Open folder');
+    const newWorktreeIndex = menuText.indexOf('New worktree');
     expect(newProjectIndex).toBeGreaterThan(-1);
     expect(switchProjectIndex).toBeGreaterThan(newProjectIndex);
     expect(openFolderIndex).toBeGreaterThan(switchProjectIndex);
+    expect(newWorktreeIndex).toBeGreaterThan(openFolderIndex);
 
     for (const testId of [
       'project-switcher-new-project',
@@ -168,13 +249,15 @@ describe('ProjectSwitcher dropdown behavior', () => {
     expect(createDialogProps.at(-1)?.bridge).toBe(bridge);
   });
 
-  test('search filters before the ten-item slice, announces empty results, stops typeahead bubbling, and clears on close', async () => {
+  test('search matches projects only (not worktrees/branches), announces empty results, stops typeahead bubbling, and clears on close', async () => {
     const bridge = createBridge();
     render(<ProjectSwitcher bridge={bridge as never} />);
 
     await openMenu();
 
     const search = screen.getByTestId('project-switcher-search') as HTMLInputElement;
+    expect(search.placeholder).toBe('Search projects...');
+    expect(search.getAttribute('aria-label')).toBe('Search projects');
 
     fireEvent.keyDown(search, { key: 'O' });
     expect(keydownBubbleCount).toBe(0);
@@ -185,6 +268,8 @@ describe('ProjectSwitcher dropdown behavior', () => {
       expect(screen.getByTestId('project-switcher-recent-/archive/omega-project')).not.toBeNull();
     });
     expect(screen.queryByTestId('project-switcher-recent-/projects/project-1')).toBeNull();
+    expect(screen.queryByTestId('project-switcher-worktree-/archive/omega-wt')).toBeNull();
+    expect(screen.queryByTestId('project-switcher-branch-omega-branch')).toBeNull();
 
     fireEvent.change(search, { target: { value: 'does-not-exist' } });
 
@@ -198,5 +283,163 @@ describe('ProjectSwitcher dropdown behavior', () => {
     await waitFor(() => {
       expect((screen.getByTestId('project-switcher-search') as HTMLInputElement).value).toBe('');
     });
+  });
+
+  test('the top-level "New worktree…" item opens the New Worktree dialog EMPTY (no pre-fill)', async () => {
+    const bridge = createBridge();
+    render(<ProjectSwitcher bridge={bridge as never} />);
+    await openMenu();
+
+    fireEvent.click(screen.getByTestId('project-switcher-new-worktree'));
+    const dialog = await waitFor(() => {
+      const el = screen.getByTestId('new-worktree-dialog');
+      expect(el.getAttribute('data-open')).toBe('true');
+      return el;
+    });
+    expect(dialog.getAttribute('data-initial-name')).toBe('');
+    expect(newWorktreeProps.at(-1)?.initialBranchName).toBe('');
+  });
+
+  test('the flyout "Create worktree …" action opens the dialog PRE-FILLED with the typed name', async () => {
+    const bridge = createBridge();
+    bridge.project.listRecent = mock(() =>
+      Promise.resolve([
+        {
+          name: 'current',
+          path: '/projects/current',
+          gitCommonDir: '/projects/current/.git',
+          mainRoot: '/projects/current',
+          isLinkedWorktree: false,
+          branch: 'main',
+          lastOpenedAt: '2026-07-01',
+        },
+        {
+          name: 'has-worktree',
+          path: '/projects/current/.ok/worktrees/has-worktree',
+          gitCommonDir: '/projects/current/.git',
+          mainRoot: '/projects/current',
+          isLinkedWorktree: true,
+          branch: 'has-worktree',
+          lastOpenedAt: '2026-07-01',
+        },
+      ]),
+    );
+    render(<ProjectSwitcher bridge={bridge as never} />);
+    await openMenu();
+
+    fireEvent.click(screen.getByTestId('project-switcher-toggle-/projects/current'));
+    const searchBox = (await screen.findByTestId(
+      'project-switcher-flyout-search-/projects/current',
+    )) as HTMLInputElement;
+    fireEvent.change(searchBox, { target: { value: 'shiny-feature' } });
+
+    const createOption = await screen.findByTestId('project-switcher-flyout-create');
+    fireEvent.click(createOption);
+
+    const dialog = await waitFor(() => {
+      const el = screen.getByTestId('new-worktree-dialog');
+      expect(el.getAttribute('data-open')).toBe('true');
+      return el;
+    });
+    expect(dialog.getAttribute('data-initial-name')).toBe('shiny-feature');
+    expect(newWorktreeProps.at(-1)?.initialBranchName).toBe('shiny-feature');
+  });
+
+  test('threads branches and the already-has-a-worktree set from the cached model to the dialog', async () => {
+    const bridge = createBridge();
+    render(<ProjectSwitcher bridge={bridge as never} />);
+    await openMenu();
+
+    fireEvent.click(screen.getByTestId('project-switcher-new-worktree'));
+    await waitFor(() =>
+      expect(screen.getByTestId('new-worktree-dialog').getAttribute('data-open')).toBe('true'),
+    );
+
+    const props = newWorktreeProps.at(-1);
+    expect(props?.branches).toContain('omega-branch');
+    expect(props?.branches).toContain('has-worktree');
+    expect(props?.existingWorktreeBranches?.has('has-worktree')).toBe(true);
+    expect(props?.existingWorktreeBranches?.has('omega-branch')).toBe(false);
+    expect(props?.remoteBranches).toEqual([
+      'origin/main',
+      'origin/omega-branch',
+      'origin/remote-only-x',
+    ]);
+    expect(props?.behindByBranch?.get('omega-branch')).toBe(4);
+    expect(props?.behindByBranch?.get('has-worktree')).toBe(0);
+  });
+
+  test('File menu "new-worktree" action opens the New Worktree dialog; "switch-worktree" opens the dropdown', async () => {
+    const bridge = createBridge();
+    render(<ProjectSwitcher bridge={bridge as never} />);
+    expect(menuActionCb).not.toBeNull();
+
+    act(() => menuActionCb?.('new-worktree'));
+    await waitFor(() =>
+      expect(screen.getByTestId('new-worktree-dialog').getAttribute('data-open')).toBe('true'),
+    );
+
+    act(() => menuActionCb?.('switch-worktree'));
+    await waitFor(() => {
+      expect(screen.getByTestId('project-switcher-search')).not.toBeNull();
+    });
+  });
+
+  test('on the Electron host, a row selection within the open-click guard window is swallowed, then works after it', async () => {
+    (window as unknown as { okDesktop?: unknown }).okDesktop = {};
+    const bridge = createBridge();
+    render(<ProjectSwitcher bridge={bridge as never} />);
+    await openMenu();
+
+    fireEvent.click(screen.getByTestId('project-switcher-recent-/projects/project-1'));
+    expect(bridge.project.open).not.toHaveBeenCalled();
+
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    fireEvent.click(screen.getByTestId('project-switcher-recent-/projects/project-1'));
+    await waitFor(() => expect(bridge.project.open).toHaveBeenCalledTimes(1));
+  });
+
+  test('does not flash "No recent projects." while the first listRecent is in flight, then resolves cleanly', async () => {
+    let resolveList: (value: Array<{ name: string; path: string }>) => void = () => {};
+    const pending = new Promise<Array<{ name: string; path: string }>>((resolve) => {
+      resolveList = resolve;
+    });
+    const bridge = createBridge();
+    bridge.project.listRecent = mock(() => pending);
+    render(<ProjectSwitcher bridge={bridge as never} />);
+
+    fireEvent.click(screen.getByTestId('project-switcher-trigger'));
+    act(() => {
+      lastDropdownOpenChange?.(true);
+    });
+
+    expect(screen.queryByText('No recent projects.')).toBeNull();
+    expect(screen.queryByTestId('project-switcher-search')).toBeNull();
+    expect(screen.getByTestId('project-switcher-new-project')).not.toBeNull();
+
+    await act(async () => {
+      resolveList([recent('Current', '/projects/current'), recent('Project 1')]);
+      await pending;
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('project-switcher-search')).not.toBeNull();
+    });
+    expect(screen.queryByText('No recent projects.')).toBeNull();
+  });
+
+  test('shows "No recent projects." only once loaded AND genuinely empty', async () => {
+    const bridge = createBridge();
+    bridge.project.listRecent = mock(() => Promise.resolve([]));
+    render(<ProjectSwitcher bridge={bridge as never} />);
+
+    fireEvent.click(screen.getByTestId('project-switcher-trigger'));
+    act(() => {
+      lastDropdownOpenChange?.(true);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('No recent projects.')).not.toBeNull();
+    });
+    expect(screen.queryByTestId('project-switcher-search')).toBeNull();
   });
 });

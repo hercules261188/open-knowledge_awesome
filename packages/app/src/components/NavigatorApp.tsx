@@ -1,5 +1,5 @@
 import { Trans, useLingui } from '@lingui/react/macro';
-import { FolderOpenIcon, GitBranch, Loader2Icon, PlusIcon, XIcon } from 'lucide-react';
+import { Folder, FolderOpenIcon, GitBranch, Loader2Icon, PlusIcon, XIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { type ComponentType, useEffect, useState } from 'react';
 import { useThemeBridge } from '@/hooks/use-theme-bridge';
@@ -26,6 +26,7 @@ import { CreateProjectDialog } from './CreateProjectDialog';
 import { GithubIcon } from './icons/github';
 import { OkIcon } from './icons/ok';
 import { McpConsentDialog } from './McpConsentDialog';
+import { basenameOf } from './project-switcher-recents';
 import { ShareReceiveDialog } from './ShareReceiveDialog';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -374,6 +375,7 @@ function RecentRow({
 }) {
   const { t } = useLingui();
   const { name: projectName } = project;
+  const isWorktree = project.isLinkedWorktree === true;
   return (
     <li className="group flex items-center justify-between rounded-lg hover:bg-accent">
       <Button
@@ -382,21 +384,52 @@ function RecentRow({
         onClick={onOpen}
         disabled={project.missing}
         className={cn(
-          'h-auto min-w-0 flex-1 justify-between gap-2 py-3.5 pl-4 pr-2 text-left hover:bg-transparent',
+          'h-auto min-w-0 flex-1 justify-between gap-3 py-3.5 pl-4 pr-2 text-left hover:bg-transparent',
           project.missing && 'opacity-50',
         )}
       >
-        <div className="flex flex-col gap-1 truncate">
-          <span className="font-medium text-sm text-gray-700 dark:text-foreground">
-            {project.name}
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            aria-hidden="true"
+            className={cn(
+              'flex size-8 shrink-0 items-center justify-center rounded-lg',
+              isWorktree
+                ? 'bg-green-600/10 text-green-600 dark:bg-green-400/10 dark:text-green-400'
+                : 'bg-muted text-muted-foreground',
+            )}
+          >
+            {isWorktree ? <GitBranch className="size-4" /> : <Folder className="size-4" />}
           </span>
-          <span className="truncate w-full text-muted-foreground text-xs">{project.path}</span>
+          <div className="flex min-w-0 flex-col gap-1 truncate">
+            {isWorktree ? (
+              <>
+                <span className="truncate font-medium text-sm text-gray-700 dark:text-foreground">
+                  {project.branch ?? branch ?? project.name}
+                </span>
+                <span
+                  className="truncate w-full text-muted-foreground text-xs"
+                  title={project.mainRoot ?? ''}
+                >
+                  <Trans>worktree of {basenameOf(project.mainRoot ?? '')}</Trans>
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="font-medium text-sm text-gray-700 dark:text-foreground">
+                  {project.name}
+                </span>
+                <span className="truncate w-full text-muted-foreground text-xs">
+                  {project.path}
+                </span>
+              </>
+            )}
+          </div>
         </div>
         {project.missing ? (
           <Badge className="text-2xs rounded-sm" variant="warning">
             <Trans>Missing</Trans>
           </Badge>
-        ) : branch !== null ? (
+        ) : branch !== null && !isWorktree ? (
           <span
             className="flex max-w-[40%] items-center gap-1 text-muted-foreground text-xs"
             data-testid={`nav-recent-branch-${project.path}`}

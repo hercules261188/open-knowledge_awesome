@@ -264,6 +264,12 @@ import {
   WindowManager,
 } from './window-manager.ts';
 import { WINDOW_MIN_SIZE } from './window-min-size.ts';
+import {
+  classifyRecentGit,
+  classifyRecentGitAsync,
+  readWorktreeBranchAsync,
+} from './worktree-recents.ts';
+import { createWorktree, listWorktreeSelector } from './worktree-service.ts';
 
 const VIBRANCY_DEFAULT: VibrancyMaterial = 'sidebar';
 
@@ -1164,6 +1170,10 @@ async function openProject(
   tryCloseNavigator(navigatorWindow, { projectPath });
   const gitRemoteUrl = readCanonicalGitHubRemoteUrl(resolvedProjectDir) ?? undefined;
   appState = addRecentProject(appState, resolvedProjectDir, ctx.projectName, gitRemoteUrl);
+  if (entryPoint === 'worktree') {
+    const mainRoot = classifyRecentGit(resolvedProjectDir).mainRoot;
+    if (mainRoot !== null) appState = { ...appState, lastOpenedProject: mainRoot };
+  }
   saveAppState(appState);
   refreshApplicationMenu();
 }
@@ -1363,6 +1373,8 @@ async function runApplicationMenuRefresh(): Promise<void> {
     onNewFolder: () => sendMenuActionToFocused('new-folder'),
     onNewFromTemplate: () => sendMenuActionToFocused('new-from-template'),
     onNewProject: () => sendMenuActionToFocused('new-project'),
+    onNewWorktree: () => sendMenuActionToFocused('new-worktree'),
+    onSwitchWorktree: () => sendMenuActionToFocused('switch-worktree'),
     onRename: () => sendMenuActionToFocused('rename'),
     onDuplicate: () => sendMenuActionToFocused('duplicate'),
     onMoveToTrash: () => sendMenuActionToFocused('move-to-trash'),
@@ -2120,7 +2132,23 @@ function registerIpcHandlers() {
   });
 
   handle('ok:project:list-recent', async () => {
-    return annotateMissing(appState) as RecentProject[];
+    return Promise.all(
+      annotateMissing(appState).map(async (entry): Promise<RecentProject> => {
+        if (entry.missing) return entry;
+        const [git, branch] = await Promise.all([
+          classifyRecentGitAsync(entry.path),
+          readWorktreeBranchAsync(entry.path),
+        ]);
+        if (git.gitCommonDir === null) return entry;
+        return {
+          ...entry,
+          gitCommonDir: git.gitCommonDir,
+          mainRoot: git.mainRoot ?? undefined,
+          isLinkedWorktree: git.isLinkedWorktree,
+          branch,
+        };
+      }),
+    );
   });
 
   handle('ok:project:remove-recent', async (_event, projectPath) => {
@@ -2208,6 +2236,39 @@ function registerIpcHandlers() {
       request.pendingShareBranchSwitch,
     );
     return undefined;
+  });
+
+  handle('ok:worktree:dispatch', async (event, request) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const ctx =
+      win && wm ? wm.getContextForBrowserWindow(win as unknown as BrowserWindowLike) : null;
+    const projectPath = ctx?.projectPath ?? null;
+    if (!projectPath) {
+      logIpcError({
+        event: 'ipc.error',
+        channel: 'ok:worktree:dispatch',
+        reason: 'no-git',
+        handler: 'worktreeDispatch',
+      });
+      return { ok: false, reason: 'no-git' };
+    }
+    let anchor: string;
+    try {
+      anchor = realpathSync(projectPath);
+    } catch {
+      anchor = projectPath;
+    }
+    if (request.kind === 'list') {
+      return listWorktreeSelector(anchor, anchor);
+    }
+    return createWorktree({
+      anchorPath: anchor,
+      branch: request.branch,
+      baseBranch: request.baseBranch,
+      baseRef: request.baseRef,
+      remoteRef: request.remoteRef,
+      createBranch: request.createBranch,
+    });
   });
 
   handle('ok:share:validate-folder', async (_event, request) => {
