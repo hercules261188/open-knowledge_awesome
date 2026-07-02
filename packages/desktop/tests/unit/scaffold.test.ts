@@ -14,6 +14,11 @@ describe('desktop scaffold', () => {
     expect(typeof server.bootServer).toBe('function');
     expect(typeof server.createServer).toBe('function');
   });
+
+  test('workspace deps resolve to built dist, not the src barrel', () => {
+    expect(import.meta.resolve('@inkeep/open-knowledge-server')).toMatch(/\/dist\/index\.mjs$/);
+    expect(import.meta.resolve('@inkeep/open-knowledge-core')).toMatch(/\/dist\/index\.mjs$/);
+  });
 });
 
 describe('M2 electron-version contract (D6)', () => {
