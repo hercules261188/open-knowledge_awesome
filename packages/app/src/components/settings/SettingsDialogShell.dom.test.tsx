@@ -209,11 +209,15 @@ describe('SettingsDialogShell userBinding gating (Tier-3 mount)', () => {
   });
 
   test('renders the dialog frame, navigation landmark, and default Preferences section immediately', () => {
-    render(<SettingsDialogShell open={true} onOpenChange={() => {}} />);
+    render(<SettingsDialogShell open onOpenChange={() => {}} />);
 
     expect(screen.getByTestId('settings-dialog')).toBeTruthy();
-    expect(screen.getByRole('dialog')).toBeTruthy();
+    const dialog = screen.getByRole('dialog');
+    const labelledBy = dialog.getAttribute('aria-labelledby');
+    expect(labelledBy).toBeTruthy();
+    expect(document.getElementById(labelledBy ?? '')?.textContent).toBe('Settings');
     expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Settings content' })).toBeTruthy();
     expect(screen.getByRole('navigation', { name: 'Settings sections' })).toBeTruthy();
     expect(screen.getByText('User')).toBeTruthy();
     expect(screen.getByText('This project')).toBeTruthy();

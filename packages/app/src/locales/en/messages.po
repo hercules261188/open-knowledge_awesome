@@ -5919,6 +5919,10 @@ msgstr "Setting up"
 msgid "Settings"
 msgstr "Settings"
 
+#: src/components/settings/SettingsDialogShell.tsx
+msgid "Settings content"
+msgstr "Settings content"
+
 #: src/components/settings/SettingsDialogErrorBoundary.tsx
 msgid "Settings failed to load"
 msgstr "Settings failed to load"

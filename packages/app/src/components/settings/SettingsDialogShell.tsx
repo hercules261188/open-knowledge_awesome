@@ -76,11 +76,10 @@ export function SettingsDialogShell({ open, onOpenChange }: SettingsDialogShellP
   const { collabUrl } = useDocumentContext();
   const { userBinding, userSynced, okignoreBinding, okignoreSynced } = useConfigContext();
   const { desktopPresent } = useClaudeDesktopIntegration();
-  const titleId = 'settings-dialog-title';
 
   // Always default to USER → Preferences on each fresh open. No
   // in-session memory of last-viewed section.
-  const [activeId, setActiveId] = useState<string>('preferences');
+  const [activeId, setActiveId] = useState('preferences');
   useEffect(() => {
     if (open) setActiveId('preferences');
   }, [open]);
@@ -139,7 +138,7 @@ export function SettingsDialogShell({ open, onOpenChange }: SettingsDialogShellP
         className="flex h-[700px] max-h-[calc(100dvh-4rem)] w-[900px] max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden p-0 sm:grid sm:grid-cols-[220px_1fr] sm:max-w-[min(900px,calc(100%-2rem))]"
         data-testid="settings-dialog"
       >
-        <DialogTitle className="sr-only" id={titleId}>
+        <DialogTitle className="sr-only">
           <Trans>Settings</Trans>
         </DialogTitle>
         <DialogDescription className="sr-only">
@@ -147,7 +146,7 @@ export function SettingsDialogShell({ open, onOpenChange }: SettingsDialogShellP
         </DialogDescription>
         <SettingsSidebar groups={groups} activeId={activeId} onSelect={setActiveId} />
         <section
-          aria-labelledby={titleId}
+          aria-label={t`Settings content`}
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain subtle-scrollbar p-6"
           // biome-ignore lint/a11y/noNoninteractiveTabindex: this scrollable content section must be focusable so keyboard users can scroll long settings pages.
           tabIndex={0}

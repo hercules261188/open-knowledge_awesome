@@ -22,6 +22,11 @@ import type {
   OkLocalOpAuthStatusResponse,
 } from '@/lib/desktop-bridge-types';
 
+const DEFAULT_AUTH_QUERY_HOST = 'github.com';
+// Default HTTP transports are created per component; keep status single-flight
+// at module scope so overlapping callers share one local-op request.
+const authStatusInFlight = new Map<string, Promise<OkLocalOpAuthStatusResponse>>();
+
 /**
  * Extract the RFC 9457 problem+json title from a pre-stream error body for
  * surfacing the typed reason (rate limit, origin rejection, auth failure)
@@ -55,6 +60,53 @@ async function postJson(path: string, body: unknown): Promise<Response> {
   });
 }
 
+async function requestAuthStatus(request?: {
+  host?: string;
+}): Promise<OkLocalOpAuthStatusResponse> {
+  const host = request?.host ?? DEFAULT_AUTH_QUERY_HOST;
+  const res = await postJson('/api/local-op/auth/status', request);
+  if (!res.ok) {
+    // Surface the typed RFC 9457 title (e.g. "Origin not allowed.",
+    // "Loopback required.") instead of dropping the structured
+    // diagnosis. Sibling transports do the same.
+    const error = await extractProblemTitle(res);
+    return { authenticated: false, host, error };
+  }
+  const data = (await res.json()) as Record<string, unknown>;
+  const h = typeof data.host === 'string' ? data.host : host;
+  if (data.authenticated === true && typeof data.login === 'string') {
+    // Mirror the whitelist in auth-query.ts so the HTTP and IPC paths
+    // surface `tier` consistently — without this, only IPC carries it.
+    const tier =
+      data.tier === 'A' || data.tier === 'B' || data.tier === 'C' ? data.tier : undefined;
+    return {
+      authenticated: true,
+      host: h,
+      login: data.login,
+      tier,
+      name: typeof data.name === 'string' ? data.name : undefined,
+      email: typeof data.email === 'string' ? data.email : undefined,
+    };
+  }
+  return {
+    authenticated: false,
+    host: h,
+    error: typeof data.error === 'string' ? data.error : undefined,
+  };
+}
+
+function coalescedAuthStatus(request?: { host?: string }): Promise<OkLocalOpAuthStatusResponse> {
+  const host = request?.host ?? DEFAULT_AUTH_QUERY_HOST;
+  const existing = authStatusInFlight.get(host);
+  if (existing) return existing;
+
+  const promise = requestAuthStatus(request).finally(() => {
+    authStatusInFlight.delete(host);
+  });
+  authStatusInFlight.set(host, promise);
+  return promise;
+}
+
 /**
  * Pull the last parseable JSON line out of an NDJSON-ish body. The HTTP
  * relays for status / repos emit one structured line; older builds may
@@ -78,38 +130,7 @@ function lastJsonLine(text: string): Record<string, unknown> | null {
 /** HTTP transport — wraps the `/api/local-op/auth/{status,repos}` endpoints. */
 export function httpAuthQueryTransport(): AuthQueryTransport {
   return {
-    async status(request) {
-      const host = request?.host ?? 'github.com';
-      const res = await postJson('/api/local-op/auth/status', request);
-      if (!res.ok) {
-        // Surface the typed RFC 9457 title (e.g. "Origin not allowed.",
-        // "Loopback required.") instead of dropping the structured
-        // diagnosis. Sibling transports do the same.
-        const error = await extractProblemTitle(res);
-        return { authenticated: false, host, error };
-      }
-      const data = (await res.json()) as Record<string, unknown>;
-      const h = typeof data.host === 'string' ? data.host : host;
-      if (data.authenticated === true && typeof data.login === 'string') {
-        // Mirror the whitelist in auth-query.ts so the HTTP and IPC paths
-        // surface `tier` consistently — without this, only IPC carries it.
-        const tier =
-          data.tier === 'A' || data.tier === 'B' || data.tier === 'C' ? data.tier : undefined;
-        return {
-          authenticated: true,
-          host: h,
-          login: data.login,
-          tier,
-          name: typeof data.name === 'string' ? data.name : undefined,
-          email: typeof data.email === 'string' ? data.email : undefined,
-        };
-      }
-      return {
-        authenticated: false,
-        host: h,
-        error: typeof data.error === 'string' ? data.error : undefined,
-      };
-    },
+    status: coalescedAuthStatus,
     async repos(request) {
       const host = request?.host ?? 'github.com';
       const res = await postJson('/api/local-op/auth/repos', request);
