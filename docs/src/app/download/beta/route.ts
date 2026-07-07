@@ -1,5 +1,5 @@
 import { createBetaResolver, toRedirectResponse } from '@/lib/download-links';
-import { captureServerEvent, referrerHostname, resolveDistinctId } from '@/lib/track';
+import { attribution, captureServerEvent, isPrefetchRequest, resolveDistinctId } from '@/lib/track';
 
 /**
  * Perennial beta-channel download URL: openknowledge.ai/download/beta
@@ -27,12 +27,13 @@ export async function GET(request: Request): Promise<Response> {
   if (redirect.kind === 'fallback') {
     console.error(`[download/beta] falling back to releases page: ${redirect.cause}`);
   }
-  // A fallback sends the user to the releases page, not a DMG — don't count it.
-  if (redirect.kind !== 'fallback') {
+  // A fallback sends the user to the releases page, not a DMG, and a prefetch
+  // is not a click — don't count either.
+  if (redirect.kind !== 'fallback' && !isPrefetchRequest(request)) {
     captureServerEvent({
       event: 'dmg_downloaded',
       distinctId: resolveDistinctId(request),
-      properties: { channel: 'beta', referrer: referrerHostname(request) },
+      properties: { channel: 'beta', ...attribution(request) },
     });
   }
   return toRedirectResponse(redirect);

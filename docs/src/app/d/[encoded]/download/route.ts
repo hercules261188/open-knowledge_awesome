@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { buildPendingShareCookie } from '@/lib/deferred-share';
 import { buildSplashViewModel, SPLASH_DOWNLOAD_URL } from '@/lib/share-splash';
-import { captureServerEvent, resolveDistinctId } from '@/lib/track';
+import { attribution, captureServerEvent, isPrefetchRequest, resolveDistinctId } from '@/lib/track';
 
 /**
  * `GET /d/<encoded>/download` — the splash Download CTA target.
@@ -25,11 +25,16 @@ export async function GET(
     response.cookies.set(buildPendingShareCookie(encoded));
   }
 
-  captureServerEvent({
-    event: 'dmg_downloaded',
-    distinctId: resolveDistinctId(request),
-    properties: { channel: 'stable', source: 'share-splash' },
-  });
+  // A prefetch is not a download — redirect it, don't count it. `utm_content`
+  // is server-authoritative here (this route IS the share-splash CTA), so it
+  // wins over any `?utm_content=` on the request.
+  if (!isPrefetchRequest(request)) {
+    captureServerEvent({
+      event: 'dmg_downloaded',
+      distinctId: resolveDistinctId(request),
+      properties: { channel: 'stable', ...attribution(request), utm_content: 'share-splash' },
+    });
+  }
 
   return response;
 }

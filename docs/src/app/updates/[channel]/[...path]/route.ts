@@ -1,11 +1,12 @@
 import { createBetaResolver } from '@/lib/download-links';
-import { captureServerEvent, resolveDistinctId } from '@/lib/track';
+import { captureServerEvent, resolveDistinctId, userAgentProperties } from '@/lib/track';
 
 /**
  * Update-feed proxy: openknowledge.ai/updates/{stable,beta}/<asset>
  *
- * electron-updater is pointed here (in a later desktop change) instead of at
- * GitHub directly, so updates can be counted per version. Every request is a
+ * electron-updater's feed points here instead of at GitHub directly (wired in
+ * the desktop app's auto-updater), so updates can be counted per version.
+ * Every request is a
  * thin 302 to the byte-identical GitHub release asset — never re-hosted, so the
  * manifest `sha512` and the macOS code signature both stay valid. Only the
  * `*-mac.zip` (the artifact Squirrel.Mac swaps in) is counted as an update; the
@@ -106,6 +107,9 @@ export async function GET(
         artifact_type: 'zip',
         to_version: version,
         from_version: rawFrom && FROM_VERSION.test(rawFrom) ? rawFrom : undefined,
+        // Confirms updates really come from electron-updater and surfaces any
+        // scraper/browser traffic hitting the update feed.
+        ...userAgentProperties(request),
       },
     });
   }

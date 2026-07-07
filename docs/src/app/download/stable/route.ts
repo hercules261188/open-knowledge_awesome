@@ -1,5 +1,5 @@
 import { STABLE_DMG_URL } from '@/lib/download-links';
-import { captureServerEvent, referrerHostname, resolveDistinctId } from '@/lib/track';
+import { attribution, captureServerEvent, isPrefetchRequest, resolveDistinctId } from '@/lib/track';
 
 /**
  * Perennial stable-channel download URL: openknowledge.ai/download/stable
@@ -15,11 +15,14 @@ import { captureServerEvent, referrerHostname, resolveDistinctId } from '@/lib/t
 export const dynamic = 'force-dynamic';
 
 export function GET(request: Request): Response {
-  captureServerEvent({
-    event: 'dmg_downloaded',
-    distinctId: resolveDistinctId(request),
-    properties: { channel: 'stable', referrer: referrerHostname(request) },
-  });
+  // A prefetch is not a download — redirect it, don't count it.
+  if (!isPrefetchRequest(request)) {
+    captureServerEvent({
+      event: 'dmg_downloaded',
+      distinctId: resolveDistinctId(request),
+      properties: { channel: 'stable', ...attribution(request) },
+    });
+  }
   return new Response(null, {
     status: 302,
     headers: {

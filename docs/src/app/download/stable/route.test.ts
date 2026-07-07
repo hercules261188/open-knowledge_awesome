@@ -15,7 +15,8 @@ mock.module('../../../lib/track.ts', () => ({
     _lastCapture = opts;
   },
   resolveDistinctId: () => 'visitor-1',
-  referrerHostname: () => 'news.ycombinator.com',
+  attribution: () => ({ referrer: 'news.ycombinator.com', utm_content: 'landing-hero' }),
+  isPrefetchRequest: (request: Request) => request.headers.get('sec-purpose') === 'prefetch',
 }));
 
 const { GET } = await import('./route.ts');
@@ -32,5 +33,18 @@ describe('GET /download/stable', () => {
     expect(_lastCapture?.distinctId).toBe('visitor-1');
     expect(_lastCapture?.properties?.channel).toBe('stable');
     expect(_lastCapture?.properties?.referrer).toBe('news.ycombinator.com');
+    expect(_lastCapture?.properties?.utm_content).toBe('landing-hero');
+  });
+
+  test('a prefetch still redirects but is NOT counted', () => {
+    _lastCapture = null;
+    const res = GET(
+      new Request('https://openknowledge.ai/download/stable', {
+        headers: { 'sec-purpose': 'prefetch' },
+      }),
+    );
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location')).toBe(STABLE_DMG_URL);
+    expect(_lastCapture).toBeNull();
   });
 });

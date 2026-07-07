@@ -78,4 +78,30 @@ export const DOWNLOAD_URL = STABLE_DMG_URL;
  * CTAs and the `DownloadButton` link here so every download fires a
  * `dmg_downloaded` event before the 302 to GitHub.
  */
-export const DOWNLOAD_ROUTE = '/download/stable';
+const DOWNLOAD_ROUTE = '/download/stable';
+
+/**
+ * Every internal download CTA slug this app mints, reported as
+ * `utm_content` on `dmg_downloaded`. Append-only: these are analytics
+ * lineage — renaming one orphans its dashboard history. Namespace:
+ * `docs-*` and share slugs here; `landing-*` belongs to ok-marketing.
+ * `share-splash` is minted server-side by the /d/[encoded]/download
+ * route rather than via downloadRouteForCta.
+ */
+export type DownloadCta =
+  | 'docs-content'
+  | 'docs-sidebar'
+  | 'continue-page'
+  | 'share-splash-fallback'
+  | 'share-splash';
+
+/**
+ * {@link DOWNLOAD_ROUTE} tagged with `?utm_content=<cta-slug>` so the download
+ * event attributes the exact CTA even when the browser sends no Referer.
+ * `utm_content` is the standard UTM field for differentiating links/CTAs;
+ * `utm_source`/`utm_medium` describe the acquisition channel and are reserved
+ * for genuinely external campaign links (see `attribution` in src/lib/track.ts).
+ */
+export function downloadRouteForCta(cta: DownloadCta): string {
+  return `${DOWNLOAD_ROUTE}?utm_content=${encodeURIComponent(cta)}`;
+}

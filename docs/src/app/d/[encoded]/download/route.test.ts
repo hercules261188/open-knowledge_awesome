@@ -9,11 +9,14 @@ type CaptureOpts = {
   properties?: Record<string, string | undefined>;
 };
 let _lastCapture: CaptureOpts | null = null;
+let _isPrefetch = false;
 mock.module('../../../../lib/track.ts', () => ({
   captureServerEvent: (opts: CaptureOpts) => {
     _lastCapture = opts;
   },
   resolveDistinctId: () => 'splash-1',
+  attribution: () => ({ referrer: 'openknowledge.ai', utm_content: 'should-be-overridden' }),
+  isPrefetchRequest: () => _isPrefetch,
 }));
 
 // Flip the decoded-share outcome per test.
@@ -45,7 +48,8 @@ describe('GET /d/[encoded]/download', () => {
     expect(res.headers.get('set-cookie')).toContain('ok-pending-share=valid-share');
     expect(_lastCapture?.event).toBe('dmg_downloaded');
     expect(_lastCapture?.properties?.channel).toBe('stable');
-    expect(_lastCapture?.properties?.source).toBe('share-splash');
+    // Server-authoritative: overrides the attribution() value.
+    expect(_lastCapture?.properties?.utm_content).toBe('share-splash');
     expect(_lastCapture?.distinctId).toBe('splash-1');
   });
 
@@ -57,7 +61,7 @@ describe('GET /d/[encoded]/download', () => {
     expect(res.headers.get('location')).toBe(SPLASH_URL);
     expect(res.headers.get('set-cookie')).toBeNull();
     expect(_lastCapture?.event).toBe('dmg_downloaded');
-    expect(_lastCapture?.properties?.source).toBe('share-splash');
+    expect(_lastCapture?.properties?.utm_content).toBe('share-splash');
   });
 
   test('unsupported-version share: no cookie, still counts', async () => {
@@ -67,5 +71,19 @@ describe('GET /d/[encoded]/download', () => {
     expect(res.status).toBe(302);
     expect(res.headers.get('set-cookie')).toBeNull();
     expect(_lastCapture?.event).toBe('dmg_downloaded');
+  });
+
+  test('a prefetch still redirects (with cookie) but is NOT counted', async () => {
+    _viewKind = 'ok';
+    _lastCapture = null;
+    _isPrefetch = true;
+    try {
+      const res = await call('valid-share');
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toBe(SPLASH_URL);
+      expect(_lastCapture).toBeNull();
+    } finally {
+      _isPrefetch = false;
+    }
   });
 });

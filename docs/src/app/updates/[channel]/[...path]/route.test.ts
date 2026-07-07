@@ -12,6 +12,7 @@ mock.module('../../../../lib/track.ts', () => ({
     _lastCapture = opts;
   },
   resolveDistinctId: () => 'updater-1',
+  userAgentProperties: () => ({ ua_class: 'electron' }),
 }));
 
 const BETA_DMG_URL =
@@ -69,6 +70,7 @@ describe('GET /updates/[channel]/[...path]', () => {
     expect(_lastCapture?.properties?.artifact_type).toBe('zip');
     expect(_lastCapture?.properties?.to_version).toBe('0.20.0');
     expect(_lastCapture?.properties?.from_version).toBe('0.19.1');
+    expect(_lastCapture?.properties?.ua_class).toBe('electron');
   });
 
   test('beta zip parses the prerelease version and counts (no from_version header)', async () => {
@@ -78,6 +80,15 @@ describe('GET /updates/[channel]/[...path]', () => {
     expect(res.status).toBe(302);
     expect(res.headers.get('location')).toBe(`${REL}/download/v0.20.0-beta.4/${file}`);
     expect(_lastCapture?.properties?.to_version).toBe('0.20.0-beta.4');
+    expect(_lastCapture?.properties?.from_version).toBeUndefined();
+  });
+
+  test('an ill-formed x-ok-from-version header is dropped, not forwarded to analytics', async () => {
+    _lastCapture = null;
+    const file = 'OpenKnowledge-0.20.0-arm64-mac.zip';
+    const res = await call('stable', [file], { 'x-ok-from-version': '../etc; rm -rf' });
+    expect(res.status).toBe(302);
+    expect(_lastCapture?.event).toBe('app_update_downloaded');
     expect(_lastCapture?.properties?.from_version).toBeUndefined();
   });
 

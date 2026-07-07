@@ -5,7 +5,7 @@ import { SiteFooter } from '@/components/footer';
 import { GitHubIcon } from '@/components/icons/github';
 import { OkWordmark } from '@/components/ok-wordmark';
 import { buildCloneCommand, SPLASH_INSTALL_COMMAND, type SplashView } from '@/lib/share-splash';
-import { DOWNLOAD_ROUTE } from '@/lib/site';
+import { downloadRouteForCta } from '@/lib/site';
 import { SplashButtonLabel, splashPrimaryButton } from './splash-buttons';
 import { SplashCliButton } from './splash-cli-button';
 import { SplashCtaPanel } from './splash-cta-panel';
@@ -140,7 +140,7 @@ export function SplashFallback({ heading }: { heading: string }) {
           </h1>
 
           <div className="mt-10 flex flex-wrap items-center gap-4">
-            <a href={DOWNLOAD_ROUTE} className={splashPrimaryButton}>
+            <a href={downloadRouteForCta('share-splash-fallback')} className={splashPrimaryButton}>
               <SplashButtonLabel direction="down">DOWNLOAD FOR MAC</SplashButtonLabel>
             </a>
             <SplashCliButton installCommand={SPLASH_INSTALL_COMMAND} />

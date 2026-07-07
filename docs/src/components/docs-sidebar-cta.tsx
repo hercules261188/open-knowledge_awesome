@@ -1,7 +1,7 @@
 import { Download } from 'lucide-react';
 import { GitHubIcon } from '@/components/icons/github';
 import { MarketingButton } from '@/components/marketing-button';
-import { DOWNLOAD_ROUTE, GITHUB_URL } from '@/lib/site';
+import { downloadRouteForCta, GITHUB_URL } from '@/lib/site';
 
 // Compact for the button label (e.g. "1.5K"); full comma-grouped for the tooltip.
 const compactStars = new Intl.NumberFormat('en-US', {
@@ -18,14 +18,15 @@ const fullStars = new Intl.NumberFormat('en-US');
 export function DocsSidebarCta({ stars }: { stars: number | null }) {
   return (
     <div className="flex gap-2">
-      {/* MarketingButton (matches the docs Subscribe button). DOWNLOAD_ROUTE
-          starts with /download/, so MarketingButton renders it as a raw <a>
-          via its isRedirectRoute path — next/link never prefetches it, which
-          would fire the 302 and inflate download counts. */}
+      {/* MarketingButton (matches the docs Subscribe button). The download
+          route starts with /download/, so MarketingButton renders it as a raw
+          <a> via its isRedirectRoute path — next/link never prefetches it,
+          which would fire the 302 and inflate download counts. rel omits
+          `noreferrer` so the same-origin Referer attributes the CTA. */}
       <MarketingButton
-        href={DOWNLOAD_ROUTE}
+        href={downloadRouteForCta('docs-sidebar')}
         target="_blank"
-        rel="noopener noreferrer"
+        rel="noopener"
         aria-label="Download for macOS"
         title="Download for macOS"
         variant="primary"

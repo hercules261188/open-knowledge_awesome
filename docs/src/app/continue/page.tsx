@@ -9,7 +9,7 @@ import {
   PENDING_SHARE_COOKIE,
   PORT_PARAM,
 } from '@/lib/deferred-share';
-import { DOWNLOAD_ROUTE } from '@/lib/site';
+import { downloadRouteForCta } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,7 +80,7 @@ export default async function ContinuePage({ searchParams }: ContinuePageProps) 
             <br />
             Don&rsquo;t have the app yet?{' '}
             <a
-              href={DOWNLOAD_ROUTE}
+              href={downloadRouteForCta('continue-page')}
               className="font-medium text-slide-text underline underline-offset-4 transition-colors hover:text-primary"
             >
               Download it for macOS

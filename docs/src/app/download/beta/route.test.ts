@@ -38,7 +38,8 @@ mock.module('../../../lib/track.ts', () => ({
     _lastCapture = opts;
   },
   resolveDistinctId: () => 'visitor-9',
-  referrerHostname: () => undefined,
+  attribution: () => ({ sec_fetch_site: 'none' }),
+  isPrefetchRequest: (request: Request) => request.headers.get('sec-purpose') === 'prefetch',
 }));
 
 // Dynamic import ensures route.ts imports the mocked modules above.
@@ -78,6 +79,19 @@ describe('GET /download/beta', () => {
     expect(res.status).toBe(302);
     expect(res.headers.get('location')).toBe(RELEASES_PAGE_URL);
     expect(res.headers.get('cache-control')).toBe(FALLBACK_CACHE_CONTROL);
+    expect(_lastCapture).toBeNull();
+  });
+
+  test('a prefetch still redirects but is NOT counted', async () => {
+    _redirect = { kind: 'fresh', url: TEST_DMG_URL };
+    _lastCapture = null;
+    const res = await GET(
+      new Request('https://openknowledge.ai/download/beta', {
+        headers: { 'sec-purpose': 'prefetch' },
+      }),
+    );
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location')).toBe(TEST_DMG_URL);
     expect(_lastCapture).toBeNull();
   });
 });
