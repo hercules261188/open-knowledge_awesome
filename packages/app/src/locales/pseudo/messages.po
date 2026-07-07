@@ -2286,8 +2286,16 @@ msgstr ""
 msgid "Detecting"
 msgstr ""
 
+#: src/components/MermaidFileViewer.tsx
+msgid "Diagram"
+msgstr ""
+
 #: src/editor/slash-command/component-items.tsx
 msgid "Diagram from Mermaid source — flowchart, sequence, class, state, ER, gantt, pie."
+msgstr ""
+
+#: src/components/MermaidFileViewer.tsx
+msgid "Diagram view mode"
 msgstr ""
 
 #: src/components/TimelinePanel.tsx
@@ -6136,6 +6144,10 @@ msgstr ""
 msgid "Show advanced"
 msgstr ""
 
+#: src/components/MermaidFileViewer.tsx
+msgid "Show diagram"
+msgstr ""
+
 #: src/components/GraphPanel.tsx
 msgid "Show external URL nodes"
 msgstr ""
@@ -6195,6 +6207,10 @@ msgstr ""
 
 #: src/components/BottomComposer.tsx
 msgid "Show selection preview"
+msgstr ""
+
+#: src/components/MermaidFileViewer.tsx
+msgid "Show source"
 msgstr ""
 
 #: src/components/TerminalRevealTab.tsx
@@ -6316,6 +6332,10 @@ msgstr ""
 
 #: src/components/SubscribeForm.tsx
 msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: src/components/MermaidFileViewer.tsx
+msgid "Source"
 msgstr ""
 
 #: src/lib/keyboard-shortcuts.ts

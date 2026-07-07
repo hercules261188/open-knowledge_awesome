@@ -575,7 +575,7 @@ export const WIKI_EMBED_EXTENSIONS: ReadonlySet<string> = new Set([
   'mobi',
 ]);
 
-export type InlineAssetMediaKind = 'image' | 'video' | 'audio' | 'pdf' | 'text';
+export type InlineAssetMediaKind = 'image' | 'video' | 'audio' | 'pdf' | 'text' | 'mermaid';
 
 // Sidebar-clickable asset extensions, grouped by inline-render path.
 // Each set is a STRICT subset of its canonical-class set (asserted below),
@@ -671,6 +671,16 @@ assertSubset(
 // /api/asset keeps returning 415 for them (serve allowlist is unchanged).
 export const TEXT_VIEWER_FALLBACK_EXTENSIONS: ReadonlySet<string> = new Set(['base', 'canvas']);
 
+// Standalone Mermaid diagram source files (mermaid-cli's input format;
+// GitHub linguist registers `.mmd`/`.mermaid` as the Mermaid language).
+// Rendered via the editor's `<Mermaid>` component through the ungated
+// `/api/asset-text` byte path — same allowlist stance as the text-viewer
+// fallback set (indexable + linkable but not admitted to the XSS-gated
+// `/api/asset` serve path). Parse-failing content (including MultiMarkdown
+// `.mmd`, which shares the extension) falls back to the read-only source
+// view in the app-side viewer, so the file always reads.
+export const MERMAID_FILE_EXTENSIONS: ReadonlySet<string> = new Set(['mmd', 'mermaid']);
+
 // Code-file extensions live in a sibling module so the
 // language→extension table can be shared with the app-side TextViewer
 // (which maps the same canonical IDs to CodeMirror language packs).
@@ -690,6 +700,7 @@ export { CODE_FILE_EXTENSIONS };
 export const LINKABLE_ASSET_EXTENSIONS: ReadonlySet<string> = new Set([
   ...ASSET_EXTENSIONS,
   ...TEXT_VIEWER_FALLBACK_EXTENSIONS,
+  ...MERMAID_FILE_EXTENSIONS,
 ]);
 
 /**
@@ -710,6 +721,7 @@ export function mediaKindForSidebarAssetExtension(ext: string): InlineAssetMedia
   if (SIDEBAR_PDF_ASSET_EXTENSIONS.has(normalized)) return 'pdf';
   if (SIDEBAR_TEXT_ASSET_EXTENSIONS.has(normalized)) return 'text';
   if (TEXT_VIEWER_FALLBACK_EXTENSIONS.has(normalized)) return 'text';
+  if (MERMAID_FILE_EXTENSIONS.has(normalized)) return 'mermaid';
   // Files whose extension matches a codeblock-supported language
   // (`ts` / `py` / `go` / ...) open by default in the read-only
   // text viewer with syntax highlighting — same kind dispatch as

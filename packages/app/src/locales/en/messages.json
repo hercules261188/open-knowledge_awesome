@@ -320,6 +320,7 @@
     "6s7LXO": ["Heads up"],
     "6u9LvN": [["days", "plural", { "one": ["#", " day ago"], "other": ["#", " days ago"] }]],
     "6vEr3W": ["Link target"],
+    "72xhRD": ["Diagram view mode"],
     "74-bX-": ["A pull quote stands out from the surrounding text."],
     "74eHt-": ["No file or folder selected"],
     "75Y1dk": ["Horizontal pill strip + active panel below; click a pill to switch panels."],
@@ -543,6 +544,7 @@
     "D8OV7J": ["Only collaborators"],
     "DDTdLl": ["Code block settings"],
     "DELNQk": ["Collaborators see your in-progress edits as soon as they sync."],
+    "DEWDbv": ["Show diagram"],
     "DF1MtZ": ["Loading conflict for ", ["filePath"]],
     "DFfRbX": ["Sync status: ", ["syncStateLabel"], " — git identity unset"],
     "DId6MT": ["Project-level pages with no outgoing graph edges."],
@@ -1346,6 +1348,7 @@
       ["pickedRelative"],
       "</1> because it contains a <2>.git</2> folder (one .ok/ per git repo). <3>Content directory</3> defaults to <4>.</4> (the whole repo); type a sub-folder to narrow it."
     ],
+    "Y6SK9K": ["Show source"],
     "Y8ViJx": ["A newer version may have been deployed since this tab opened."],
     "YC6_wP": ["Edit ", ["keyName"]],
     "YEP3X2": ["Delete a table when the active table cell selection covers the full table."],
@@ -1733,6 +1736,7 @@
     "hxEUVJ": ["Initialize ", ["selectedPackName"]],
     "hyCxJY": ["Open that worktree instead"],
     "hynz2K": ["Download started"],
+    "i-ShMB": ["Diagram"],
     "i1flq_": ["Wiki link suggestions"],
     "i3f2kh": ["No matching commands."],
     "i92eAT": ["We'll create a repository and start syncing — no terminal needed."],
@@ -2288,6 +2292,7 @@
     "w_Sphq": ["Attachments"],
     "wbv9xO": ["Create new project"],
     "wbwHYD": ["Enable sync"],
+    "wdxz7K": ["Source"],
     "weP6me": ["Couldn't load docs — type @ again to retry"],
     "wlwXUk": [
       "You picked ~/Downloads. Files there are usually transient — consider a stable folder instead."

@@ -52,9 +52,10 @@ export type DocumentReadSuccess = z.infer<typeof DocumentReadSuccessSchema>;
  *   when `isSymlink: true`).
  * - `kind: 'asset'` — referenced asset discovered through wiki-link or markdown
  *   image syntax. Carries `path` (contentDir-relative), `assetExt`,
- *   `mediaKind` (`'image' | 'video' | 'audio' | 'pdf' | 'text' | null` —
+ *   `mediaKind` (`'image' | 'video' | 'audio' | 'pdf' | 'text' | 'mermaid' | null` —
  *   `'text'` is set for data formats the sidebar previews via CodeMirror
- *   (json / toml / lock); `null` for non-renderable extensions that surface only
+ *   (json / toml / lock); `'mermaid'` for standalone `.mmd` / `.mermaid`
+ *   diagram files; `null` for non-renderable extensions that surface only
  *   via `[[wiki-link]]` references), and `referencedBy` (the docNames
  *   that point at it).
  * - `kind: 'file'` — any ContentFilter-passing non-markdown
@@ -87,7 +88,7 @@ export const DocumentListEntrySchema = z
     // path within the content directory.
     path: z.string().min(1).optional(),
     assetExt: z.string().min(1).optional(),
-    mediaKind: z.enum(['image', 'video', 'audio', 'pdf', 'text']).nullable().optional(),
+    mediaKind: z.enum(['image', 'video', 'audio', 'pdf', 'text', 'mermaid']).nullable().optional(),
     referencedBy: z.array(z.string().min(1)).optional(),
     // Folder-only. True when the folder contains at least one non-skipped child
     // entry. The depth-1 children variant of GET /api/documents

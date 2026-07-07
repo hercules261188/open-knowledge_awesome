@@ -2291,9 +2291,17 @@ msgstr "Detected from the editors this project is set up for. Adjust to control 
 msgid "Detecting"
 msgstr "Detecting"
 
+#: src/components/MermaidFileViewer.tsx
+msgid "Diagram"
+msgstr "Diagram"
+
 #: src/editor/slash-command/component-items.tsx
 msgid "Diagram from Mermaid source — flowchart, sequence, class, state, ER, gantt, pie."
 msgstr "Diagram from Mermaid source — flowchart, sequence, class, state, ER, gantt, pie."
+
+#: src/components/MermaidFileViewer.tsx
+msgid "Diagram view mode"
+msgstr "Diagram view mode"
 
 #: src/components/TimelinePanel.tsx
 msgid "Diff layout"
@@ -6141,6 +6149,10 @@ msgstr "Show {hidden} more"
 msgid "Show advanced"
 msgstr "Show advanced"
 
+#: src/components/MermaidFileViewer.tsx
+msgid "Show diagram"
+msgstr "Show diagram"
+
 #: src/components/GraphPanel.tsx
 msgid "Show external URL nodes"
 msgstr "Show external URL nodes"
@@ -6201,6 +6213,10 @@ msgstr "Show replace"
 #: src/components/BottomComposer.tsx
 msgid "Show selection preview"
 msgstr "Show selection preview"
+
+#: src/components/MermaidFileViewer.tsx
+msgid "Show source"
+msgstr "Show source"
 
 #: src/components/TerminalRevealTab.tsx
 msgid "Show terminal"
@@ -6322,6 +6338,10 @@ msgstr "Something went wrong starting the terminal."
 #: src/components/SubscribeForm.tsx
 msgid "Something went wrong. Please try again."
 msgstr "Something went wrong. Please try again."
+
+#: src/components/MermaidFileViewer.tsx
+msgid "Source"
+msgstr "Source"
 
 #: src/lib/keyboard-shortcuts.ts
 msgid "Source editing"

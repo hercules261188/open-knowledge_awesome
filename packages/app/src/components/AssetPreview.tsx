@@ -1,6 +1,7 @@
 import { type InlineAssetMediaKind, toDesktopAssetHref } from '@inkeep/open-knowledge-core';
 import { Trans } from '@lingui/react/macro';
 import { useState } from 'react';
+import { MermaidFileViewer } from '@/components/MermaidFileViewer';
 import { TextViewer } from '@/components/TextViewer';
 import { Button } from '@/components/ui/button';
 import { LoadingImage } from '@/components/ui/loading-image';
@@ -79,6 +80,24 @@ export function AssetPreview({ assetPath, mediaKind }: AssetPreviewProps) {
   if (effectiveMediaKind === 'text') {
     return (
       <TextViewer
+        key={assetPath}
+        src={assetTextUrl(assetPath)}
+        fileName={fileName}
+        extension={rawExtension.toLowerCase()}
+      />
+    );
+  }
+
+  // Standalone Mermaid diagram files (`.mmd` / `.mermaid`). Fetched via
+  // the same ungated `/api/asset-text` byte path as `TextViewer`, then
+  // rendered through the editor's `<Mermaid>` component so theming and
+  // parse-error advisories match ` ```mermaid ` fences in docs. The
+  // viewer exposes a Source toggle so non-Mermaid content that shares
+  // the extension (MultiMarkdown, hand-authored fragments) is still
+  // readable.
+  if (effectiveMediaKind === 'mermaid') {
+    return (
+      <MermaidFileViewer
         key={assetPath}
         src={assetTextUrl(assetPath)}
         fileName={fileName}

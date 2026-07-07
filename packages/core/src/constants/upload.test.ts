@@ -6,6 +6,7 @@ import {
   IMAGE_EXTENSIONS,
   INLINE_RENDERABLE_EXTENSIONS,
   LINKABLE_ASSET_EXTENSIONS,
+  MERMAID_FILE_EXTENSIONS,
   mediaKindForSidebarAssetExtension,
   TEXT_VIEWER_FALLBACK_EXTENSIONS,
   VIDEO_EXTENSIONS,
@@ -163,6 +164,30 @@ describe('mediaKindForSidebarAssetExtension', () => {
     expect(mediaKindForSidebarAssetExtension(ext)).toBe(expected);
   });
 
+  test.each([
+    ['mmd', 'mermaid'],
+    ['mermaid', 'mermaid'],
+  ] as const)('classifies %s → %s (mermaid diagram files)', (ext, expected) => {
+    expect(mediaKindForSidebarAssetExtension(ext)).toBe(expected);
+  });
+
+  test('normalizes mermaid extension casing and leading dot', () => {
+    expect(mediaKindForSidebarAssetExtension('.MMD')).toBe('mermaid');
+    expect(mediaKindForSidebarAssetExtension('.MERMAID')).toBe('mermaid');
+  });
+
+  test('mmd and mermaid are absent from ASSET_EXTENSIONS and INLINE_RENDERABLE_EXTENSIONS', () => {
+    // Mirrors the text-viewer-fallback guard: MERMAID_FILE_EXTENSIONS are
+    // LINKABLE (indexable + wiki-linkable, /api/asset-text-served) but must
+    // NOT enter the XSS/serve allowlist. Diagram render is client-side —
+    // the raw bytes never need to go through the inline-renderable path.
+    for (const ext of MERMAID_FILE_EXTENSIONS) {
+      expect(ASSET_EXTENSIONS.has(ext)).toBe(false);
+      expect(INLINE_RENDERABLE_EXTENSIONS.has(ext)).toBe(false);
+      expect(LINKABLE_ASSET_EXTENSIONS.has(ext)).toBe(true);
+    }
+  });
+
   test('base and canvas are absent from ASSET_EXTENSIONS and INLINE_RENDERABLE_EXTENSIONS', () => {
     // These extensions resolve to mediaKind:'text' via TEXT_VIEWER_FALLBACK_EXTENSIONS
     // rather than the inline-text set, so the serve/XSS boundary (ASSET_EXTENSIONS +
@@ -194,10 +219,15 @@ describe('mediaKindForSidebarAssetExtension', () => {
       expect(LINKABLE_ASSET_EXTENSIONS.has('canvas')).toBe(true);
     });
 
-    test('size equals ASSET_EXTENSIONS + TEXT_VIEWER_FALLBACK_EXTENSIONS', () => {
+    test('size equals ASSET_EXTENSIONS + TEXT_VIEWER_FALLBACK_EXTENSIONS + MERMAID_FILE_EXTENSIONS', () => {
       expect(LINKABLE_ASSET_EXTENSIONS.size).toBe(
-        ASSET_EXTENSIONS.size + TEXT_VIEWER_FALLBACK_EXTENSIONS.size,
+        ASSET_EXTENSIONS.size + TEXT_VIEWER_FALLBACK_EXTENSIONS.size + MERMAID_FILE_EXTENSIONS.size,
       );
+    });
+
+    test('contains mmd and mermaid (mermaid-file members)', () => {
+      expect(LINKABLE_ASSET_EXTENSIONS.has('mmd')).toBe(true);
+      expect(LINKABLE_ASSET_EXTENSIONS.has('mermaid')).toBe(true);
     });
   });
 
